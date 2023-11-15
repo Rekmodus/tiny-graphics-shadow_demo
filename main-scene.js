@@ -10,6 +10,7 @@ import {Transforms_Sandbox} from "./examples/transforms-sandbox.js"
 import {Shadow_Demo} from "./examples/shadow-demo.js"
 import {Control_Demo} from "./examples/control-demo.js"
 import {Mouse_Demo} from "./examples/mouse-demo.js"
+import {Team_project} from "./test.js"
 
 // Pull these names into this module's scope for convenience:
 const {
@@ -38,15 +39,16 @@ Object.assign(defs,
     {Transforms_Sandbox},
     {Shadow_Demo},
     {Mouse_Demo},
-    {Control_Demo});
+    {Control_Demo},
+    {Team_project});
 
 // ******************** End extra step
 
 // (Can define Main_Scene's class here)
 
-// const Main_Scene = Control_Demo;
-// const Main_Scene = Mouse_Demo;
-const Main_Scene = Shadow_Demo;
+ const Main_Scene = Team_project;
+//const Main_Scene = Mouse_Demo;
+//const Main_Scene = Shadow_Demo;
 const Additional_Scenes = [];
 
 export {Main_Scene, Additional_Scenes, Canvas_Widget, Code_Widget, Text_Widget, defs}
