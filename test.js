@@ -30,23 +30,16 @@ const Square =
         }
     }
 
-    
-
 
 // The scene
 export class Team_project extends Simulation {
     constructor() {
         super();
-        this.walls = [];
 
-        //this.shapes = Object.assign({}, this.data.shapes);
-        //this.shapes.square = new defs.Square();
+
+
         const shader = new defs.Fake_Bump_Map(1);
-        // this.material = new Material(shader, {
-        //     color: color(0, 0, 0, 1),
-        //     ambient: .5, texture: this.data.textures.stars
-        // })
-        // Load the model file:
+
         this.shapes = {
             "teapot": new Shape_From_File("assets/teapot.obj"),
             "blender_cube": new Shape_From_File("assets/blender_cube.obj"),
@@ -56,13 +49,21 @@ export class Team_project extends Simulation {
             "monster": new Shape_From_File("assets/monster.obj"),
             "sphere": new Subdivision_Sphere(6),
             "cube": new Cube(),
+            "floor": new Cube(),
             "square_2d": new Square(),
         };
+        this.shapes.floor.arrays.texture_coord.forEach(p => p.scale_by(2));
+
 
         let moon;
         let agent_body;
         let flashlight_COI;
         let shadowView = false;
+        let moving = false;
+        this.timer_offset = 0;
+        this.t = 0;
+
+// Materials
 
         // For the teapot
         this.stars = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
@@ -84,7 +85,7 @@ export class Team_project extends Simulation {
             color_texture: new Texture("assets/flash.png"),
             light_depth_texture: null
         });
-        // For the flashlight
+        // For the Picture2
         this.pic2 = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
             color: color(1, 1, 1, 1),
             ambient: .4, diffusivity: .5, specularity: .5,
@@ -99,11 +100,6 @@ export class Team_project extends Simulation {
             color_texture: new Texture("assets/sh.png"),
             light_depth_texture: null
         });
-        // texture2: new Material(new Texture_Scroll_X(), {
-        //     color: hex_color("#000000"),
-        //     ambient: 1, diffusivity: 1.0, specularity: 0.5,
-        //     texture: new Texture("assets/kyo.png", "LINEAR_MIPMAP_LINEAR")
-        // }),
 
         // For the table
         this.wood = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
@@ -122,19 +118,20 @@ export class Team_project extends Simulation {
         });
 
         // For the floor or other plain objects
-        // this.floor = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
-        //     color: hex_color("#cc0000"),
-        //     ambient: 0, diffusivity: 0.5, specularity: 0.4, smoothness: 64,
-        //     color_texture: null,
-        //     light_depth_texture: null
-        // })
-        // For the floor or other plain objects
         this.floor = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
             color: color(.1, .1, .1, 1),
             ambient: 0.5, diffusivity: 1, specularity: 1,
             color_texture: new Texture("assets/grid.png"),
             light_depth_texture: null
         })
+
+        this.Wall = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/Wall.png"),
+            light_depth_texture: null
+        })
+
         // For the first pass
         this.pure = new Material(new Color_Phong_Shader(), {
         })
@@ -166,6 +163,20 @@ export class Team_project extends Simulation {
         this.control.space = false;
 
         this.data = new Test_Data();
+
+        // this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(0.3, 0.3 + Math.random(), 0.3))
+        // .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
+        //     vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));   
+        // this.walls = [];
+        // let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5)).times(Mat4.identity());
+        // let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8)).times(Mat4.identity());
+        // let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33)).times(Mat4.identity());
+        // let model_trans_wall_4 = Mat4.translation(0, 1, 0).times(Mat4.identity());
+      
+        // this.walls.push(model_trans_wall_1);
+        // this.walls.push(model_trans_wall_2);
+        // this.walls.push(model_trans_wall_3);
+        // this.walls.push(model_trans_wall_4);
     }
 
     random_color() {
@@ -183,7 +194,7 @@ export class Team_project extends Simulation {
         this.new_line();
         this.new_line();
         // Add buttons so the user can actively toggle data members of our Scene:
-        this.key_triggered_button("Toggle_Light", ["h"], function () {
+        this.key_triggered_button("Toggle_Light", ["f"], function () {
             this.hover ^= 1;
         });
         this.new_line();
@@ -208,7 +219,8 @@ export class Team_project extends Simulation {
         this.key_triggered_button("Speed Up",  [" "],
             () => this.control.space = true, '#6E6460', () => this.control.space = false);
             this.new_line();
-            this.key_triggered_button("Attach to object", ["y"], () => this.attached = () => this.moon);
+            this.key_triggered_button("Attach to object", ["1"], () => this.attached = () => this.moon);
+
         }
 
     texture_buffer_init(gl) {
@@ -283,13 +295,13 @@ export class Team_project extends Simulation {
 
         let light_position = this.light_position;
         let light_color = this.light_color;
-        const t = program_state.animation_time;
+        let t = program_state.animation_time;
 
         program_state.draw_shadow = draw_shadow;
 
         if (draw_light_source && shadow_pass) {
             // this.shapes.sphere.draw(context, program_state,
-            //     Mat4.translation(light_position[0], light_position[1], light_position[2]).times(Mat4.scale(.5,.5,.5)),
+            //     Mat4.translation(light_position[0], light_position[1], light_position[2]).times(Mat4.scale(1,1,1)),
             //     this.light_src.override({color: light_color}));
         }
 
@@ -306,23 +318,18 @@ export class Team_project extends Simulation {
         let model_trans_ball_2 = Mat4.translation(-5, 1.8, 0).times(Mat4.scale(0.5, 0.5, 0.5));
         let model_trans_ball_3 = Mat4.translation(0, 1, 3);
         let model_trans_ball_4 = Mat4.translation(-5, 1, -3);
-        let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 5));
+
+        let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5));
         let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8));
         let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33));
+      
 
-        // if (this.walls.length < 1){
-        //     this.bodies.push(new Body(this.shapes.cube, this.stars , vec3(1, 1, 1))
-        //     .emplace(model_trans_wall_1,
-        //         vec3(0, 0, 0),0));
-        //     //this.walls.push(new Body(this.shapes.cube.draw(context, program_state, model_trans_floor, shadow_pass? this.floor : this.pure)));
-        //     //this.walls.push(new Body(this.shapes.cube.draw(context, program_state, model_trans_wall_1, shadow_pass? this.floor : this.pure)));
-        // }
+        this.shapes.floor.draw(context, program_state, model_trans_floor, shadow_pass? this.floor : this.pure);
 
-        this.shapes.cube.draw(context, program_state, model_trans_floor, shadow_pass? this.floor : this.pure);
-        this.shapes.cube.draw(context, program_state, model_trans_wall_1, shadow_pass? this.floor : this.pure);
-        
+        this.shapes.cube.draw(context, program_state, model_trans_wall_1, shadow_pass? this.Wall : this.pure);
         this.shapes.cube.draw(context, program_state, model_trans_wall_2, shadow_pass? this.floor : this.pure);
         this.shapes.cube.draw(context, program_state, model_trans_wall_3, shadow_pass? this.floor : this.pure);
+        this.shapes.cube.draw(context, program_state, Mat4.translation(0, 1, 0).times(Mat4.identity()), shadow_pass? this.floor : this.pure);
 
         //const planet_position = program_state.camera_transform.times(vec4(0, 0, 0, 1)); 
 
@@ -364,16 +371,57 @@ export class Team_project extends Simulation {
                 program_state.camera_inverse = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor));
             }
         }
-        // console.log("cam transform?");
-        // console.log(program_state.camera_transform);
+ 
+        // For walking animation
+        if (this.moving){
+            
+            this.t = t - this.timer_offset;
+            //console.log("TIMER"+ this.t);
+        }else{
+            this.timer_offset = t 
+            this.t = t;
+        }
    
-        let base_transform = Mat4.identity().times(Mat4.scale(0.5,0.5,0.5).times(Mat4.translation(2.5 + 0.01*Math.sin(t/900),-1.5 + 0.1*Math.sin(t/900),-6)));
+        let base_transform = Mat4.identity().times(Mat4.scale(0.5,0.5,0.5).times(Mat4.translation(2.5 + (0.01 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
         this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
         
         let model_transform = Mat4.identity();
         this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
         this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
     }
+
+    // collider(nothing){
+    //     const playerSize = vec3(2.5, 2.5, 2.5); // Adjust the size of the player
+
+    //     for (let i = 0; i < this.walls.length; i++) {
+    //         let playerPosition = program_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+    //         const wall = this.walls[i];
+
+
+    //         const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
+    //         const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
+
+    //         const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
+    //         const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
+
+    //         // console.log(i);
+    //         // console.log(adjustedMinExtent);
+    //         // console.log(adjustedMaxExtent);
+        
+    //         if (
+    //             playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
+    //             playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
+    //         ) {
+    //             // Collision detected with wall[i]
+    //             // Handle the collision (e.g., stop the player's movement)
+    //             console.log("Collision with wall " + i);
+    //             return true;
+    //         }else{
+    //             return false;
+    //         }
+    //     }
+    // }
 
     display(context, program_state) {
         const t = program_state.animation_time;
@@ -407,6 +455,48 @@ export class Team_project extends Simulation {
             )); // Locate the camera here
         }
 
+        // for (let w of this.walls) {
+        //     //console.log("Walls");
+        //     //console.log(w);
+        // }
+
+        // const defaultCubeSize = vec3(2, 2, 2);
+        // const playerSize = vec3(2.5, 2.5, 2.5); // Adjust the size of the player
+
+        // for (let i = 0; i < this.walls.length; i++) {
+        //     let playerPosition = program_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+        //     const wall = this.walls[i];
+
+
+        //     const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
+        //     const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
+
+        //     const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
+        //     const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
+
+        //     // console.log(i);
+        //     // console.log(adjustedMinExtent);
+        //     // console.log(adjustedMaxExtent);
+        
+        //     if (
+        //         playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
+        //         playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
+        //     ) {
+        //         // Collision detected with wall[i]
+        //         // Handle the collision (e.g., stop the player's movement)
+        //         console.log("Collision with wall " + i);
+        //     }
+        // }
+        //console.log("children");
+        //console.log(this.children[0].thrust);
+
+        if(Math.abs(this.children[0].thrust[0]) > 0 || Math.abs(this.children[0].thrust[1]) > 0 || Math.abs(this.children[0].thrust[2]) > 0){
+            this.moving = true;
+        }else{
+            this.moving = false;
+        }
+
 
         // The position of the light
         //this.light_position = Mat4.rotation(t / 1500, 0, 1, 0).times(vec4(3, 6, 0, 1));
@@ -414,8 +504,8 @@ export class Team_project extends Simulation {
         if (this.attached){
             if (this.attached() != null){
                 const planet_position = this.attached().times(vec4(0, 0, 0, 1)); 
-                console.log(planet_position);
-                console.log(this.attached());
+                //console.log(planet_position);
+                //console.log(this.attached());
                 //let pos = this.attached().times(vec4(0, 0, 0, 1)).to3();
                 this.light_position = Mat4.translation(0,0,0).times(planet_position);
             }
@@ -447,8 +537,8 @@ export class Team_project extends Simulation {
         //this.light_view_target = vec4(this.light_position[0], this.light_position[1], this.light_position[2] - 10, 1);
         let base_transform = Mat4.identity().times(Mat4.translation(0.01*Math.sin(t/900), 0.1*Math.sin(t/900),-5)).times(vec4(0, 0, 0, 1));
         let testing = program_state.camera_transform.times(base_transform);
-        console.log("testing");
-        console.log(testing);
+        //console.log("testing");
+        //console.log(testing);
         this.light_view_target = testing;
         
         this.flashlight_COI = testing;
@@ -515,7 +605,7 @@ export class Team_project extends Simulation {
         // //console.log("Hello world");
         if (this.swarm){
             while (this.bodies.length < 100)
-                this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(1, 1 + Math.random(), 1))
+                this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(0.3, 0.3 + Math.random(), 0.3))
                     .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
                         vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));            
         }
@@ -534,22 +624,17 @@ export class Team_project extends Simulation {
             }
         }
 
-        console.log(this.walls);
-        let colliders = {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: .1};
-        for (let w of this.walls){
-            // Simple Sphere Collision Implementation
-
-            if (w.check_if_colliding(this.agent_body, colliders)){
-                console.log("Colliding");
-            }
-            // Simple Sphere Collision Implementation
-            console.log(w);
-            // let dis = w.center.minus(this.agent_pos);
-            // if (dis.norm() < this.agent_size) {
-            //     w.linear_velocity.add_by(dis.times(dt * 98));
-            // }
-
-        }
+        // this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(0.3, 0.3 + Math.random(), 0.3))
+        // .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
+        //     vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));                 
+        //console.log(this.walls);
+        // let colliders = {intersect_test: Body.intersect_cube, points: new defs.Cube(), leeway: .1};
+        // for (let w of this.walls){
+        //     // Simple Sphere Collision Implementation
+        //     if (w.check_if_colliding(this.agent_body, colliders)){
+        //         console.log("Colliding");
+        //     }
+        // }
         // Control
         let speed = 10.0;
         if (this.control.space)
@@ -623,6 +708,17 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
 
             this.mouse_enabled_canvases = new Set();
             this.will_take_over_graphics_state = true;
+
+            this.walls = [];
+            let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5)).times(Mat4.identity());
+            let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8)).times(Mat4.identity());
+            let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33)).times(Mat4.identity());
+            let model_trans_wall_4 = Mat4.translation(0, 1, 0).times(Mat4.identity());
+          
+            this.walls.push(model_trans_wall_1);
+            this.walls.push(model_trans_wall_2);
+            this.walls.push(model_trans_wall_3);
+            this.walls.push(model_trans_wall_4);
         }
 
         set_recipient(matrix_closure, inverse_closure) {
@@ -639,7 +735,7 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             this.set_recipient(() => graphics_state.camera_transform,
                 () => graphics_state.camera_inverse);
 
-            console.log(graphics_state.camera_transform);
+            //console.log(graphics_state.camera_transform);
         }
 
         add_mouse_controls(canvas) {
@@ -707,7 +803,7 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             //this.key_triggered_button("Roll left", [","], () => this.roll = 1, undefined, () => this.roll = 0);
             //this.key_triggered_button("Roll right", ["."], () => this.roll = -1, undefined, () => this.roll = 0);
             this.new_line();
-            this.key_triggered_button("(Un)freeze mouse look around", ["f"], () => this.look_around_locked ^= 1, "#8B8885");
+            this.key_triggered_button("(Un)freeze mouse look around", ["g"], () => this.look_around_locked ^= 1, "#8B8885");
             this.new_line();
             // this.key_triggered_button("Go to world origin", ["r"], () => {
             //     this.matrix().set_identity(4, 4);
@@ -784,6 +880,44 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             this.inverse().pre_multiply(Mat4.translation(0, 0, -25));
         }
 
+        
+        check_wall_collisions(w, graphics_state){
+            const playerSize = vec3(2.5, 2.5, 2.5); // Adjust the size of the player
+            // console.log("WALLS");
+            // // console.log(w);
+            // // console.log(this.walls);
+            // console.log(this.walls.length);
+
+            for (let i = 0; i < this.walls.length; i++) {
+                const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+                const wall = this.walls[i];
+
+
+                const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
+                const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
+
+                const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
+                const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
+                //  console.log(i);
+                //  //console.log(playerPosition);
+                // // console.log(i);
+                // console.log(adjustedMinExtent);
+                // console.log(adjustedMaxExtent);
+            
+                if (
+                    playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
+                    playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
+                ) {
+                    // Collision detected with wall[i]
+                    // Handle the collision (e.g., stop the player's movement)
+                    console.log("Collision with wall " + i);
+                    return true;
+                }
+            }
+            return false;
+        }
+
         display(context, graphics_state, dt = graphics_state.animation_delta_time / 1000) {
             // The whole process of acting upon controls begins here.
             // const m = this.speed_multiplier * this.meters_per_frame,
@@ -806,111 +940,91 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             if (this.mouse.anchor)
                 this.third_person_arcball(dt * r);
             // Log some values:
+            //console.log("pos");
+            //console.log(this.pos);
             this.pos = this.inverse().times(vec4(0, 0, 0, 1));
             this.z_axis = this.inverse().times(vec4(0, 0, 1, 0));
-            console.log("cam pos?" + this.pos);
-            console.log("cam z?" + this.z_axis);
+            //console.log("cam pos?" + this.pos);
+            //console.log("cam z?" + this.z_axis);
+            if (this.check_wall_collisions(this.walls, graphics_state)){
+                // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
+                this.first_person_flyaround(0, dt * m * -1);
+            }
+
+
+            // const playerSize = vec3(2.5, 2.5, 2.5); // Adjust the size of the player
+
+            // for (let i = 0; i < this.walls.length; i++) {
+            //     //console.log("what" + i);
+            //     let playerPosition = this.pos;
+            //     playerPosition = playerPosition.times(-1);
+            //     playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+            //     const wall = this.walls[i];
+
+
+            //     const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
+            //     const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
+
+            //     const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
+            //     const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
+
+            //     //  console.log(i);
+            //     //  console.log(playerPosition);
+            //     // console.log(adjustedMinExtent);
+            //     // console.log(adjustedMaxExtent);
+            
+            //     if (
+            //         playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
+            //         playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
+            //     ) {
+            //         // Collision detected with wall[i]
+            //         // Handle the collision (e.g., stop the player's movement)
+            //         console.log("Collision with wall " + i);
+                    
+            //     }else{
+                    
+            //     }
+            // }
+
+
+            // const m = this.meters_per_frame,
+            // r = this.speed_multiplier * this.radians_per_frame;
+        
+            // if (this.will_take_over_graphics_state) {
+            //     this.reset(graphics_state);
+            //     this.will_take_over_graphics_state = false;
+            // }
+        
+            // if (!this.mouse_enabled_canvases.has(context.canvas)) {
+            //     this.add_mouse_controls(context.canvas);
+            //     this.mouse_enabled_canvases.add(context.canvas);
+            // }
+        
+            // // Save the current camera position
+            // const original_position = this.pos.copy();
+        
+            // // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
+            // this.first_person_flyaround(dt * r, dt * m);
+        
+            // // Check for collisions with walls
+            // this.check_wall_collisions();
+        
+            // // Also apply third-person "arcball" camera mode if a mouse drag is occurring:
+            // if (this.mouse.anchor)
+            //     this.third_person_arcball(dt * r);
+        
+            // // Log some values:
+            // this.pos = this.inverse().times(vec4(0, 0, 0, 1));
+            // this.z_axis = this.inverse().times(vec4(0, 0, 1, 0));
+        
+            // // If a collision occurred, revert the player's position
+            // if (this.check_wall_collisions()) {
+            //     this.pos = original_position;
+            // }
         }
     }
 
-class Texture_Scroll_X extends Textured_Phong {
-    // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #6.
-    fragment_glsl_code() {
-        return this.shared_glsl_code() + `
-            varying vec2 f_tex_coord;
-            uniform sampler2D texture;
-            uniform float animation_time;
-            
-            void main(){
-                vec2 f_tex_2 = f_tex_coord;
-                vec2 f_tex_3 = vec2(f_tex_2.s - 2.0 * animation_time, f_tex_2.t);
-
-                vec2 f_tex_4 = vec2(mod(f_tex_2.s - 2.0 * animation_time, 1.0), mod(f_tex_2.t, 1.0));
-
-                vec4 tex_color = texture2D( texture, f_tex_3);      
-
-                // if (((f_tex_4.s >= 0.25 && f_tex_4.s <= 0.75) && (f_tex_4.t >= 0.25 && f_tex_4.t <= 0.75)) ||
-                // ((f_tex_4.s <= 0.15 || f_tex_4.s >= 0.85) || (f_tex_4.t <= 0.15 || f_tex_4.t >= 0.85))) {
-                //     tex_color = texture2D( texture, f_tex_3);                    
-                // }else{
-                //     tex_color = vec4(0.0, 0.0, 0.0, 1.0); 
-                // }
-                //tex_color = vec4(0.0, 0.0, 0.0, 1.0); 
-
-                if( tex_color.w < .01 ) discard;
-            
-                // Compute an initial (ambient) color:
-                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
-                                                                            // Compute the final color with contributions from lights:
-                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
-        } `;
-    }
-    update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
-        // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader
-        // recieves ALL of its inputs.  Every value the GPU wants is divided into two categories:  Values that belong
-        // to individual objects being drawn (which we call "Material") and values belonging to the whole scene or
-        // program (which we call the "Program_State").  Send both a material and a program state to the shaders
-        // within this function, one data field at a time, to fully initialize the shader for a draw.
-
-        // Fill in any missing fields in the Material object with custom defaults for this shader:
-        const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
-        material = Object.assign({}, defaults, material);
-
-        this.send_material(context, gpu_addresses, material);
-        this.send_gpu_state(context, gpu_addresses, gpu_state, model_transform);
-        context.uniform1f(gpu_addresses.animation_time, gpu_state.animation_time / 1000);
-    }
-    
-}
-    
-class Texture_Rotate extends Textured_Phong {
-    // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #7.
-    fragment_glsl_code() {
-        return this.shared_glsl_code() + `
-            varying vec2 f_tex_coord;
-            uniform sampler2D texture;
-            uniform float animation_time;
-            void main(){
-                float angle = -1.57 * animation_time;
-                mat2 rotation_matrix = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
-                vec2 f_tex_2 = f_tex_coord;
-
-                // Sample the texture image in the correct place:
-                // vec4 tex_color = texture2D( texture, rotated_center + 0.5);
-                // Reset or normalize the texture coordinates periodically
-                if (animation_time > 0.1) {
-                    f_tex_2 = vec2(f_tex_coord.s - floor(f_tex_coord.s), f_tex_coord.t - floor(f_tex_coord.t));
-                }                
-                vec2 f_tex_3 = ((f_tex_2 - 0.5) * rotation_matrix) + 0.5;
-                vec4 tex_color = vec4(0.0, 0.0, 0.0, 1.0);
-                if (((f_tex_3.s >= 0.25 && f_tex_3.s <= 0.75) && (f_tex_3.t >= 0.25 && f_tex_3.t <= 0.75)) ||
-                ((f_tex_3.s <= 0.15 || f_tex_3.s >= 0.85) || (f_tex_3.t <= 0.15 || f_tex_3.t >= 0.85))) {
-                    tex_color = texture2D( texture, f_tex_3);                    
-                }
-
-                if( tex_color.w < .01 ) discard;
-                                                                            // Compute an initial (ambient) color:
-                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
-                                                                            // Compute the final color with contributions from lights:
-                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
-        } `;
-    }
-    update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
-        // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader
-        // recieves ALL of its inputs.  Every value the GPU wants is divided into two categories:  Values that belong
-        // to individual objects being drawn (which we call "Material") and values belonging to the whole scene or
-        // program (which we call the "Program_State").  Send both a material and a program state to the shaders
-        // within this function, one data field at a time, to fully initialize the shader for a draw.
-
-        // Fill in any missing fields in the Material object with custom defaults for this shader:
-        const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
-        material = Object.assign({}, defaults, material);
-
-        this.send_material(context, gpu_addresses, material);
-        this.send_gpu_state(context, gpu_addresses, gpu_state, model_transform);
-        context.uniform1f(gpu_addresses.animation_time, gpu_state.animation_time / 1000);
-    }
-}
     
     
 class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
