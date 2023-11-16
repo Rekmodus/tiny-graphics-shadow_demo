@@ -716,6 +716,14 @@ const Phong_Shader = defs.Phong_Shader =
             this.send_material(context, gpu_addresses, material);
             this.send_gpu_state(context, gpu_addresses, gpu_state, model_transform);
         }
+
+        // update_GPU(context, gpu_addresses, program_state, model_transform, material) {
+        //     // update_GPU():  Define how to synchronize our JavaScript's variables to the GPU's:
+        //     const [P, C, M] = [program_state.projection_transform, program_state.camera_inverse, model_transform],
+        //         PCM = P.times(C).times(M);
+        //     context.uniformMatrix4fv(gpu_addresses.projection_camera_model_transform, false, Mat.flatten_2D_to_1D(PCM.transposed()));
+        //     context.uniform1f(gpu_addresses.animation_time, program_state.animation_time / 1000);
+        // }
     }
 
 

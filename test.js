@@ -2,7 +2,7 @@
 import {defs, tiny} from './examples/common.js';
 import {Body, Test_Data} from "./examples/collisions-demo.js";
 // Pull these names into this module's scope for convenience:
-const {Vector, vec3, unsafe3, vec4, vec, color, Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
+const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
@@ -139,6 +139,11 @@ export class Team_project extends Simulation {
             color_texture: new Texture("assets/stars.png"),
             light_depth_texture: null
         });
+        // this.stars = new Material(new Texture_Scroll_X(), {
+        //         color: hex_color("#000000"),
+        //         ambient: 1, diffusivity: 1.0, specularity: 0.5,
+        //         texture: new Texture("assets/stars.png", "LINEAR_MIPMAP_LINEAR")
+        //     }),
 
         // For the flashlight
         this.flash = new Material(new Shadow_Textured_Phong_Shader(1), {
@@ -147,14 +152,25 @@ export class Team_project extends Simulation {
             color_texture: new Texture("assets/flash.png"),
             light_depth_texture: null
         });
-
-        // For the Picture
-        this.pic = new Material(new Shadow_Textured_Phong_Shader(1), {
+        // For the flashlight
+        this.pic2 = new Material(new Shadow_Textured_Phong_Shader(1), {
             color: color(.0, .0, .0, 1),
             ambient: .9, diffusivity: .5, specularity: .5,
-            color_texture: new Texture("assets/sh.png"),
+            color_texture: new Texture("assets/text.png"),
             light_depth_texture: null
         });
+
+        // For the Picture
+        this.pic = new Material(new Texture_Scroll_X(), {
+            color: hex_color("#000000"),
+            ambient: 1, diffusivity: 1.0, specularity: 0.5,
+            texture: new Texture("assets/sh.png", "LINEAR_MIPMAP_LINEAR")
+        });
+        // texture2: new Material(new Texture_Scroll_X(), {
+        //     color: hex_color("#000000"),
+        //     ambient: 1, diffusivity: 1.0, specularity: 0.5,
+        //     texture: new Texture("assets/kyo.png", "LINEAR_MIPMAP_LINEAR")
+        // }),
 
         // For the table
         this.wood = new Material(new Shadow_Textured_Phong_Shader(1), {
@@ -174,11 +190,18 @@ export class Team_project extends Simulation {
 
         // For the floor or other plain objects
         this.floor = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(1, 1, 1, 1),
+            color: hex_color("#cc0000"),
             ambient: 0, diffusivity: 0.5, specularity: 0.4, smoothness: 64,
-            color_texture: new Texture("assets/grid.png"),
+            color_texture: null,
             light_depth_texture: null
         })
+        // // For the floor or other plain objects
+        // this.floor = new Material(new Shadow_Textured_Phong_Shader(1), {
+        //     color: hex_color("#de3163"),
+        //     ambient: 0, diffusivity: 0.5, specularity: 0.4, smoothness: 64,
+        //     color_texture: new Texture("assets/full_low_body__BaseColor.png"),
+        //     light_depth_texture: null
+        // })
         // For the first pass
         this.pure = new Material(new Color_Phong_Shader(), {
         })
@@ -197,7 +220,7 @@ export class Team_project extends Simulation {
 
         // The agent
         // this.agent = new defs.Subdivision_Sphere(4);
-        this.agent = new Shape_From_File("assets/cylinder.obj");
+        this.agent = new Shape_From_File("assets/teapot.obj");
         this.agent_pos = vec3(1.2, 1, 3.5);
         this.agent_size = 1.0;
 
@@ -235,13 +258,13 @@ export class Team_project extends Simulation {
             this.swarm ^= 1;
         });
         this.new_line();
-        this.key_triggered_button("Foward", ["w"],
+        this.key_triggered_button("Foward", ["Shift", "W"],
             () => this.control.w = true, '#6E6460', () => this.control.w = false);
-        this.key_triggered_button("Back",   ["s"],
+        this.key_triggered_button("Back",   ["Shift", "S"],
             () => this.control.s = true, '#6E6460', () => this.control.s = false);
-        this.key_triggered_button("Left",   ["a"],
+        this.key_triggered_button("Left",   ["Shift", "A"],
             () => this.control.a = true, '#6E6460', () => this.control.a = false);
-        this.key_triggered_button("Right",  ["d"],
+        this.key_triggered_button("Right",  ["Shift", "D"],
             () => this.control.d = true, '#6E6460', () => this.control.d = false);
         this.key_triggered_button("Look_Right",  ["e"],
             () => this.control.e = true, '#6E6460', () => this.control.e = false);
@@ -375,7 +398,7 @@ export class Team_project extends Simulation {
         // this.shapes.sphere.draw(context, program_state, model_trans_ball_2, shadow_pass? this.floor : this.pure);
         // this.shapes.sphere.draw(context, program_state, model_trans_ball_3, shadow_pass? this.floor : this.pure);
         // this.shapes.sphere.draw(context, program_state, model_trans_ball_4, shadow_pass? this.floor : this.pure);
-        this.shapes.picture.draw(context, program_state, model_trans_ball_4, shadow_pass? this.pic : this.pure);
+
         this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
         this.shapes.monster.draw(context, program_state, model_trans_ball_2, shadow_pass? this.mon : this.pure);
 
@@ -425,16 +448,12 @@ export class Team_project extends Simulation {
         
         //this.shapes.blender_cube.draw(context, program_state, this.flashlight_COI, shadow_pass? this.stars : this.pure);
 
-
-        // if (this.attached){
-        //     if (this.attached() != null){
-        //         const planet_position = this.attached().times(vec4(0, 0, 0, 1)); 
-        //         console.log(planet_position);
-        //         console.log(vec4(3, 6, 0, 1));
-        //         //let pos = this.attached().times(vec4(0, 0, 0, 1)).to3();
-        //         this.light_position = Mat4.translation(0,0,-1).times(planet_position);
-        //     }
-        // }
+        let model_transform = Mat4.identity();
+        this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
+        // for some reasion the textures after are exactly the one before when using the other things.
+        this.shapes.picture.draw(context, program_state, Mat4.translation(-5,2,0).times(model_transform), this.pic.override({texture: new Texture("assets/sh.png", "LINEAR_MIPMAP_LINEAR")}));
+        this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
+        this.shapes.picture.draw(context, program_state, Mat4.translation(0, 1, 0).times(model_trans_ball_4), this.pic);
     }
 
     display(context, program_state) {
@@ -540,8 +559,13 @@ export class Team_project extends Simulation {
         //this.light_view_target = vec4(0,0,0, 1);
         
         this.light_field_of_view = 150 * Math.PI / 180; // 130 degree
-
         program_state.lights = [new Light(this.light_position, this.light_color, 90)];
+        if(!this.hover){
+            program_state.lights = [new Light(this.light_position, this.light_color, 300)];
+        }else{
+            program_state.lights = [new Light(this.light_position, this.light_color, 1)];
+        }
+
 
         // Step 1: set the perspective and camera to the POV of light
         const light_view_mat = Mat4.look_at(
@@ -562,6 +586,8 @@ export class Team_project extends Simulation {
         program_state.view_mat = light_view_mat;
         program_state.projection_transform = light_proj_mat;
         this.render_scene(context, program_state, false,false, false);
+
+        //this.shapes.picture.draw(context, program_state, Mat4.translation(0, 1, 3), this.pic);
 
         // Step 2: unbind, draw to the canvas
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -883,36 +909,103 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
         }
     }
 
-    class Texture_Scroll_X extends Textured_Phong {
-        // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #6.
-        fragment_glsl_code() {
-            return this.shared_glsl_code() + `
-                varying vec2 f_tex_coord;
-                uniform sampler2D texture;
-                uniform float animation_time;
-                
-                void main(){
-                    vec2 f_tex_2 = f_tex_coord;
-                    vec2 f_tex_3 = vec2(f_tex_2.s - 2.0 * animation_time, f_tex_2.t);
-    
-                    vec2 f_tex_4 = vec2(mod(f_tex_2.s - 2.0 * animation_time, 1.0), mod(f_tex_2.t, 1.0));
-    
-                    vec4 tex_color = texture2D( texture, f_tex_3);      
-    
-                    if (((f_tex_4.s >= 0.25 && f_tex_4.s <= 0.75) && (f_tex_4.t >= 0.25 && f_tex_4.t <= 0.75)) ||
-                    ((f_tex_4.s <= 0.15 || f_tex_4.s >= 0.85) || (f_tex_4.t <= 0.15 || f_tex_4.t >= 0.85))) {
-                        tex_color = texture2D( texture, f_tex_3);                    
-                    }else{
-                        tex_color = vec4(0.0, 0.0, 0.0, 1.0); 
-                    }
-    
-                    if( tex_color.w < .01 ) discard;
-                
-                    // Compute an initial (ambient) color:
-                    gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
-                                                                             // Compute the final color with contributions from lights:
-                    gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
-            } `;
-        }
+class Texture_Scroll_X extends Textured_Phong {
+    // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #6.
+    fragment_glsl_code() {
+        return this.shared_glsl_code() + `
+            varying vec2 f_tex_coord;
+            uniform sampler2D texture;
+            uniform float animation_time;
+            
+            void main(){
+                vec2 f_tex_2 = f_tex_coord;
+                vec2 f_tex_3 = vec2(f_tex_2.s - 2.0 * animation_time, f_tex_2.t);
+
+                vec2 f_tex_4 = vec2(mod(f_tex_2.s - 2.0 * animation_time, 1.0), mod(f_tex_2.t, 1.0));
+
+                vec4 tex_color = texture2D( texture, f_tex_3);      
+
+                // if (((f_tex_4.s >= 0.25 && f_tex_4.s <= 0.75) && (f_tex_4.t >= 0.25 && f_tex_4.t <= 0.75)) ||
+                // ((f_tex_4.s <= 0.15 || f_tex_4.s >= 0.85) || (f_tex_4.t <= 0.15 || f_tex_4.t >= 0.85))) {
+                //     tex_color = texture2D( texture, f_tex_3);                    
+                // }else{
+                //     tex_color = vec4(0.0, 0.0, 0.0, 1.0); 
+                // }
+                //tex_color = vec4(0.0, 0.0, 0.0, 1.0); 
+
+                if( tex_color.w < .01 ) discard;
+            
+                // Compute an initial (ambient) color:
+                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                                                                            // Compute the final color with contributions from lights:
+                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+        } `;
     }
+    update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
+        // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader
+        // recieves ALL of its inputs.  Every value the GPU wants is divided into two categories:  Values that belong
+        // to individual objects being drawn (which we call "Material") and values belonging to the whole scene or
+        // program (which we call the "Program_State").  Send both a material and a program state to the shaders
+        // within this function, one data field at a time, to fully initialize the shader for a draw.
+
+        // Fill in any missing fields in the Material object with custom defaults for this shader:
+        const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
+        material = Object.assign({}, defaults, material);
+
+        this.send_material(context, gpu_addresses, material);
+        this.send_gpu_state(context, gpu_addresses, gpu_state, model_transform);
+        context.uniform1f(gpu_addresses.animation_time, gpu_state.animation_time / 1000);
+    }
+    
+}
+    
+class Texture_Rotate extends Textured_Phong {
+    // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #7.
+    fragment_glsl_code() {
+        return this.shared_glsl_code() + `
+            varying vec2 f_tex_coord;
+            uniform sampler2D texture;
+            uniform float animation_time;
+            void main(){
+                float angle = -1.57 * animation_time;
+                mat2 rotation_matrix = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+                vec2 f_tex_2 = f_tex_coord;
+
+                // Sample the texture image in the correct place:
+                // vec4 tex_color = texture2D( texture, rotated_center + 0.5);
+                // Reset or normalize the texture coordinates periodically
+                if (animation_time > 0.1) {
+                    f_tex_2 = vec2(f_tex_coord.s - floor(f_tex_coord.s), f_tex_coord.t - floor(f_tex_coord.t));
+                }                
+                vec2 f_tex_3 = ((f_tex_2 - 0.5) * rotation_matrix) + 0.5;
+                vec4 tex_color = vec4(0.0, 0.0, 0.0, 1.0);
+                if (((f_tex_3.s >= 0.25 && f_tex_3.s <= 0.75) && (f_tex_3.t >= 0.25 && f_tex_3.t <= 0.75)) ||
+                ((f_tex_3.s <= 0.15 || f_tex_3.s >= 0.85) || (f_tex_3.t <= 0.15 || f_tex_3.t >= 0.85))) {
+                    tex_color = texture2D( texture, f_tex_3);                    
+                }
+
+                if( tex_color.w < .01 ) discard;
+                                                                            // Compute an initial (ambient) color:
+                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                                                                            // Compute the final color with contributions from lights:
+                gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+        } `;
+    }
+    update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
+        // update_GPU(): Define how to synchronize our JavaScript's variables to the GPU's.  This is where the shader
+        // recieves ALL of its inputs.  Every value the GPU wants is divided into two categories:  Values that belong
+        // to individual objects being drawn (which we call "Material") and values belonging to the whole scene or
+        // program (which we call the "Program_State").  Send both a material and a program state to the shaders
+        // within this function, one data field at a time, to fully initialize the shader for a draw.
+
+        // Fill in any missing fields in the Material object with custom defaults for this shader:
+        const defaults = {color: color(0, 0, 0, 1), ambient: 0, diffusivity: 1, specularity: 1, smoothness: 40};
+        material = Object.assign({}, defaults, material);
+
+        this.send_material(context, gpu_addresses, material);
+        this.send_gpu_state(context, gpu_addresses, gpu_state, model_transform);
+        context.uniform1f(gpu_addresses.animation_time, gpu_state.animation_time / 1000);
+    }
+}
+    
     
