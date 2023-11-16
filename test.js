@@ -882,11 +882,7 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
 
         
         check_wall_collisions(w, graphics_state){
-            const playerSize = vec3(2.5, 2.5, 2.5); // Adjust the size of the player
-            // console.log("WALLS");
-            // // console.log(w);
-            // // console.log(this.walls);
-            // console.log(this.walls.length);
+            const playerSize = vec3(1.5, 1.5, 1.5); // Adjust the size of the player
 
             for (let i = 0; i < this.walls.length; i++) {
                 const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
@@ -946,82 +942,12 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             this.z_axis = this.inverse().times(vec4(0, 0, 1, 0));
             //console.log("cam pos?" + this.pos);
             //console.log("cam z?" + this.z_axis);
+
+            // Try to move player. If collide then move player back!
             if (this.check_wall_collisions(this.walls, graphics_state)){
                 // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
                 this.first_person_flyaround(0, dt * m * -1);
             }
-
-
-            // const playerSize = vec3(2.5, 2.5, 2.5); // Adjust the size of the player
-
-            // for (let i = 0; i < this.walls.length; i++) {
-            //     //console.log("what" + i);
-            //     let playerPosition = this.pos;
-            //     playerPosition = playerPosition.times(-1);
-            //     playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
-
-            //     const wall = this.walls[i];
-
-
-            //     const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
-            //     const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
-
-            //     const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
-            //     const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
-
-            //     //  console.log(i);
-            //     //  console.log(playerPosition);
-            //     // console.log(adjustedMinExtent);
-            //     // console.log(adjustedMaxExtent);
-            
-            //     if (
-            //         playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
-            //         playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
-            //     ) {
-            //         // Collision detected with wall[i]
-            //         // Handle the collision (e.g., stop the player's movement)
-            //         console.log("Collision with wall " + i);
-                    
-            //     }else{
-                    
-            //     }
-            // }
-
-
-            // const m = this.meters_per_frame,
-            // r = this.speed_multiplier * this.radians_per_frame;
-        
-            // if (this.will_take_over_graphics_state) {
-            //     this.reset(graphics_state);
-            //     this.will_take_over_graphics_state = false;
-            // }
-        
-            // if (!this.mouse_enabled_canvases.has(context.canvas)) {
-            //     this.add_mouse_controls(context.canvas);
-            //     this.mouse_enabled_canvases.add(context.canvas);
-            // }
-        
-            // // Save the current camera position
-            // const original_position = this.pos.copy();
-        
-            // // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
-            // this.first_person_flyaround(dt * r, dt * m);
-        
-            // // Check for collisions with walls
-            // this.check_wall_collisions();
-        
-            // // Also apply third-person "arcball" camera mode if a mouse drag is occurring:
-            // if (this.mouse.anchor)
-            //     this.third_person_arcball(dt * r);
-        
-            // // Log some values:
-            // this.pos = this.inverse().times(vec4(0, 0, 0, 1));
-            // this.z_axis = this.inverse().times(vec4(0, 0, 1, 0));
-        
-            // // If a collision occurred, revert the player's position
-            // if (this.check_wall_collisions()) {
-            //     this.pos = original_position;
-            // }
         }
     }
 
