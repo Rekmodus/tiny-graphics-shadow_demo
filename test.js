@@ -158,8 +158,8 @@ export class Team_project extends Simulation {
 
         // For the table
         this.wood = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(.0, .0, .0, 1),
-            ambient: 0.5, diffusivity: .5, specularity: .5,
+            color: color(0, 0, 0, 1),
+            ambient: 0.5, diffusivity: 1, specularity: .5,
             color_texture: new Texture("assets/texture01.png"),
             light_depth_texture: null
         });
@@ -174,8 +174,8 @@ export class Team_project extends Simulation {
 
         // For the floor or other plain objects
         this.floor = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(1, 1, 1, 1), 
-            ambient: .0, diffusivity: 0.6, specularity: 0.4, smoothness: 64,
+            color: color(1, 1, 1, 1),
+            ambient: 0, diffusivity: 0.5, specularity: 0.4, smoothness: 64,
             color_texture: new Texture("assets/grid.png"),
             light_depth_texture: null
         })
@@ -337,18 +337,18 @@ export class Team_project extends Simulation {
             const model_transform = Mat4.translation(2 * i, 3, 0)
                 .times(Mat4.rotation(t / 1000, -1, 2, 0))
                 .times(Mat4.rotation(-Math.PI / 2, 0, 1, 0));
-            this.shapes.teapot.draw(context, program_state, model_transform, shadow_pass? this.stars : this.pure);
+            this.shapes.table.draw(context, program_state, model_transform, shadow_pass? this.wood : this.pure);
         }
 
         let model_trans_floor = Mat4.translation(0, 0, 0).times(Mat4.scale(8, 0.1, 5));
         let model_trans_ball_0 = Mat4.translation(0, 1, 0);
         let model_trans_ball_1 = Mat4.translation(5, 0.5, 0);
-        let model_trans_ball_2 = Mat4.translation(-5, 1, 0).times(Mat4.scale(0.5, 0.5, 0.5));
+        let model_trans_ball_2 = Mat4.translation(-5, 1.8, 0).times(Mat4.scale(0.5, 0.5, 0.5));
         let model_trans_ball_3 = Mat4.translation(0, 1, 3);
         let model_trans_ball_4 = Mat4.translation(-5, 1, -3);
-        let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 2, 5));
-        let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 2, 8));
-        let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 2, 0.33));
+        let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 5));
+        let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8));
+        let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33));
 
         // if (this.walls.length < 1){
         //     this.bodies.push(new Body(this.shapes.cube, this.stars , vec3(1, 1, 1))
@@ -541,7 +541,7 @@ export class Team_project extends Simulation {
         
         this.light_field_of_view = 150 * Math.PI / 180; // 130 degree
 
-        program_state.lights = [new Light(this.light_position, this.light_color, 100)];
+        program_state.lights = [new Light(this.light_position, this.light_color, 90)];
 
         // Step 1: set the perspective and camera to the POV of light
         const light_view_mat = Mat4.look_at(
@@ -883,3 +883,36 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
         }
     }
 
+    class Texture_Scroll_X extends Textured_Phong {
+        // TODO:  Modify the shader below (right now it's just the same fragment shader as Textured_Phong) for requirement #6.
+        fragment_glsl_code() {
+            return this.shared_glsl_code() + `
+                varying vec2 f_tex_coord;
+                uniform sampler2D texture;
+                uniform float animation_time;
+                
+                void main(){
+                    vec2 f_tex_2 = f_tex_coord;
+                    vec2 f_tex_3 = vec2(f_tex_2.s - 2.0 * animation_time, f_tex_2.t);
+    
+                    vec2 f_tex_4 = vec2(mod(f_tex_2.s - 2.0 * animation_time, 1.0), mod(f_tex_2.t, 1.0));
+    
+                    vec4 tex_color = texture2D( texture, f_tex_3);      
+    
+                    if (((f_tex_4.s >= 0.25 && f_tex_4.s <= 0.75) && (f_tex_4.t >= 0.25 && f_tex_4.t <= 0.75)) ||
+                    ((f_tex_4.s <= 0.15 || f_tex_4.s >= 0.85) || (f_tex_4.t <= 0.15 || f_tex_4.t >= 0.85))) {
+                        tex_color = texture2D( texture, f_tex_3);                    
+                    }else{
+                        tex_color = vec4(0.0, 0.0, 0.0, 1.0); 
+                    }
+    
+                    if( tex_color.w < .01 ) discard;
+                
+                    // Compute an initial (ambient) color:
+                    gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                                                                             // Compute the final color with contributions from lights:
+                    gl_FragColor.xyz += phong_model_lights( normalize( N ), vertex_worldspace );
+            } `;
+        }
+    }
+    
