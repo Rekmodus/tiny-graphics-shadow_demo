@@ -860,6 +860,14 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             // Now apply translation movement of the camera, in the newest local coordinate frame.
             this.matrix().post_multiply(Mat4.translation(...this.thrust.times(-meters_per_frame)));
             this.inverse().pre_multiply(Mat4.translation(...this.thrust.times(+meters_per_frame)));
+
+            // const movementVector = this.thrust.times(-meters_per_frame);
+            //console.log(movementVector);
+
+            // Convert the local movement vector to world coordinates
+            // const worldMovementVector = this.matrix().times(movementVector.to4(0)).to3();
+            //console.log(worldMovementVector);
+            //return worldMovementVector;
         }
 
         third_person_arcball(radians_per_frame) {
@@ -881,26 +889,28 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
         }
 
         
-        check_wall_collisions(w, graphics_state){
+        check_wall_collisions(w, graphics_state, ){
             const playerSize = vec3(1.5, 1.5, 1.5); // Adjust the size of the player
 
             for (let i = 0; i < this.walls.length; i++) {
                 const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
 
                 const wall = this.walls[i];
-
+                const inverseWall = Mat4.inverse(wall);
 
                 const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
                 const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
 
+
                 const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
                 const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
-                //  console.log(i);
-                //  //console.log(playerPosition);
-                // // console.log(i);
-                // console.log(adjustedMinExtent);
-                // console.log(adjustedMaxExtent);
-            
+                
+                // console.log(i);
+                // console.log(localPlayerPosition);
+                // console.log(minExtent);
+                // console.log(maxExtent);
+                
+                // Simple AABB collision
                 if (
                     playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
                     playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
@@ -908,6 +918,19 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
                     // Collision detected with wall[i]
                     // Handle the collision (e.g., stop the player's movement)
                     console.log("Collision with wall " + i);
+                    // trying to add sliding???
+                    // // Decompose movement into parallel and perpendicular components
+                    // const parallel_component = collision_normal.times(original_movement.dot(collision_normal));
+                    // const perpendicular_component = original_movement.minus(parallel_component);
+
+                    // // Adjust the parallel component based on sliding behavior (you can modify this)
+                    // const sliding_factor = 0.5; // Adjust as needed
+                    // const adjusted_parallel_component = parallel_component.times(sliding_factor);
+
+                    // // Recombine components to get the adjusted movement
+                    // return adjusted_parallel_component.plus(perpendicular_component);
+
+
                     return true;
                 }
             }
@@ -931,13 +954,14 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
                 this.mouse_enabled_canvases.add(context.canvas)
             }
             // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
+            //const movement_vector = this.first_person_flyaround(dt * r, dt * m);
             this.first_person_flyaround(dt * r, dt * m);
             // Also apply third-person "arcball" camera mode if a mouse drag is occurring:
             if (this.mouse.anchor)
                 this.third_person_arcball(dt * r);
             // Log some values:
             //console.log("pos");
-            //console.log(this.pos);
+            //console.log(movement_vector);
             this.pos = this.inverse().times(vec4(0, 0, 0, 1));
             this.z_axis = this.inverse().times(vec4(0, 0, 1, 0));
             //console.log("cam pos?" + this.pos);
@@ -1005,12 +1029,12 @@ class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
 
                 vec3 final_color = gl_FragColor.xyz;
 
-                float fog_density = 0.2;
+                float fog_density = 0.1;
 
                 // Simulate fog based on distance from the camera:
                 float fog_distance = length(vertex_worldspace - camera_center);
 
-                float fog_factor = clamp((fog_distance - 10.0) / (40.0 - 10.0), 0.0, 1.0);
+                float fog_factor = clamp((fog_distance - 5.0) / (40.0 - 5.0), 0.0, 1.0);
 
                 // Use an exponential function for fog density
                 fog_factor = 1.0 - exp(-fog_density * fog_distance);
