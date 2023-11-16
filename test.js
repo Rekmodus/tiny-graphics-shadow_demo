@@ -119,6 +119,10 @@ export class Team_project extends Simulation {
         this.shapes = {
             "teapot": new Shape_From_File("assets/teapot.obj"),
             "blender_cube": new Shape_From_File("assets/blender_cube.obj"),
+            "Flashlight": new Shape_From_File("assets/flash.obj"),
+            "picture": new Shape_From_File("assets/Picture.obj"),
+            "table": new Shape_From_File("assets/Small Dirty Table 01.obj"),
+            "monster": new Shape_From_File("assets/monster.obj"),
             "sphere": new Subdivision_Sphere(6),
             "cube": new Cube(),
             "square_2d": new Square(),
@@ -126,6 +130,7 @@ export class Team_project extends Simulation {
 
         let moon;
         let agent_body;
+        let flashlight_COI;
 
         // For the teapot
         this.stars = new Material(new Shadow_Textured_Phong_Shader(1), {
@@ -133,12 +138,45 @@ export class Team_project extends Simulation {
             ambient: .4, diffusivity: .5, specularity: .5,
             color_texture: new Texture("assets/stars.png"),
             light_depth_texture: null
-
         });
+
+        // For the flashlight
+        this.flash = new Material(new Shadow_Textured_Phong_Shader(1), {
+            color: color(.0, .0, .0, 1),
+            ambient: .9, diffusivity: .5, specularity: .5,
+            color_texture: new Texture("assets/flash.png"),
+            light_depth_texture: null
+        });
+
+        // For the Picture
+        this.pic = new Material(new Shadow_Textured_Phong_Shader(1), {
+            color: color(.0, .0, .0, 1),
+            ambient: .9, diffusivity: .5, specularity: .5,
+            color_texture: new Texture("assets/sh.png"),
+            light_depth_texture: null
+        });
+
+        // For the table
+        this.wood = new Material(new Shadow_Textured_Phong_Shader(1), {
+            color: color(.0, .0, .0, 1),
+            ambient: 0.5, diffusivity: .5, specularity: .5,
+            color_texture: new Texture("assets/texture01.png"),
+            light_depth_texture: null
+        });
+
+        // For the monster
+        this.mon = new Material(new Shadow_Textured_Phong_Shader(1), {
+            color: color(.0, .0, .0, 1),
+            ambient: 0.5, diffusivity: .5, specularity: .5,
+            color_texture: new Texture("assets/full_low_body__BaseColor.png"),
+            light_depth_texture: null
+        });
+
         // For the floor or other plain objects
         this.floor = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(1, 1, 1, 1), ambient: .0, diffusivity: 0.6, specularity: 0.4, smoothness: 64,
-            color_texture: null,
+            color: color(1, 1, 1, 1), 
+            ambient: .0, diffusivity: 0.6, specularity: 0.4, smoothness: 64,
+            color_texture: new Texture("assets/grid.png"),
             light_depth_texture: null
         })
         // For the first pass
@@ -210,7 +248,7 @@ export class Team_project extends Simulation {
         this.key_triggered_button("Speed Up",  [" "],
             () => this.control.space = true, '#6E6460', () => this.control.space = false);
             this.new_line();
-            this.key_triggered_button("Attach to moon", ["m"], () => this.attached = () => this.moon);
+            this.key_triggered_button("Attach to object", ["m"], () => this.attached = () => this.moon);
         }
 
     texture_buffer_init(gl) {
@@ -304,10 +342,10 @@ export class Team_project extends Simulation {
 
         let model_trans_floor = Mat4.translation(0, 0, 0).times(Mat4.scale(8, 0.1, 5));
         let model_trans_ball_0 = Mat4.translation(0, 1, 0);
-        let model_trans_ball_1 = Mat4.translation(5, 1, 0);
-        let model_trans_ball_2 = Mat4.translation(-5, 1, 0);
+        let model_trans_ball_1 = Mat4.translation(5, 0.5, 0);
+        let model_trans_ball_2 = Mat4.translation(-5, 1, 0).times(Mat4.scale(0.5, 0.5, 0.5));
         let model_trans_ball_3 = Mat4.translation(0, 1, 3);
-        let model_trans_ball_4 = Mat4.translation(0, 1, -3);
+        let model_trans_ball_4 = Mat4.translation(-5, 1, -3);
         let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 2, 5));
         let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 2, 8));
         let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 2, 0.33));
@@ -333,10 +371,14 @@ export class Team_project extends Simulation {
 
         
         this.shapes.sphere.draw(context, program_state, model_trans_ball_0, shadow_pass? this.floor : this.pure);
-        this.shapes.sphere.draw(context, program_state, model_trans_ball_1, shadow_pass? this.floor : this.pure);
-        this.shapes.sphere.draw(context, program_state, model_trans_ball_2, shadow_pass? this.floor : this.pure);
-        this.shapes.sphere.draw(context, program_state, model_trans_ball_3, shadow_pass? this.floor : this.pure);
-        this.shapes.sphere.draw(context, program_state, model_trans_ball_4, shadow_pass? this.floor : this.pure);
+        // this.shapes.sphere.draw(context, program_state, model_trans_ball_1, shadow_pass? this.floor : this.pure);
+        // this.shapes.sphere.draw(context, program_state, model_trans_ball_2, shadow_pass? this.floor : this.pure);
+        // this.shapes.sphere.draw(context, program_state, model_trans_ball_3, shadow_pass? this.floor : this.pure);
+        // this.shapes.sphere.draw(context, program_state, model_trans_ball_4, shadow_pass? this.floor : this.pure);
+        this.shapes.picture.draw(context, program_state, model_trans_ball_4, shadow_pass? this.pic : this.pure);
+        this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
+        this.shapes.monster.draw(context, program_state, model_trans_ball_2, shadow_pass? this.mon : this.pure);
+
             
         let agent_trans = Mat4.translation(this.agent_pos[0], this.agent_pos[1], this.agent_pos[2]).
         times(Mat4.scale(this.agent_size,this.agent_size,this.agent_size));
@@ -375,9 +417,13 @@ export class Team_project extends Simulation {
                 program_state.camera_inverse = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor));
             }
         }
-        console.log("cam transform?");
-        console.log(program_state.camera_transform);
-        this.shapes.blender_cube.draw(context, program_state, Mat4.translation(0, 0, 1).times(Mat4.scale(1, 1, 1)).times(program_state.camera_transform), shadow_pass? this.stars : this.pure);
+        // console.log("cam transform?");
+        // console.log(program_state.camera_transform);
+   
+        let base_transform = Mat4.identity().times(Mat4.scale(0.5,0.5,0.5).times(Mat4.translation(2.5 + 0.01*Math.sin(t/900),-1.5 + 0.1*Math.sin(t/900),-6)));
+        this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
+        
+        //this.shapes.blender_cube.draw(context, program_state, this.flashlight_COI, shadow_pass? this.stars : this.pure);
 
 
         // if (this.attached){
@@ -417,8 +463,8 @@ export class Team_project extends Simulation {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls_2());
             //Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(Mat4.look_at(
-                vec3(0, 1, 10),
-                vec3(0, 1, 0),
+                vec3(0, 1.1, 10.1),
+                vec3(0, 1.1, 0),
                 vec3(0, 1, 0)
             )); // Locate the camera here
         }
@@ -446,7 +492,7 @@ export class Team_project extends Simulation {
 
 
         // The position of the light
-        this.light_position = Mat4.rotation(t / 1500, 0, 1, 0).times(vec4(3, 6, 0, 1));
+        //this.light_position = Mat4.rotation(t / 1500, 0, 1, 0).times(vec4(3, 6, 0, 1));
         
         if (this.attached){
             if (this.attached() != null){
@@ -457,11 +503,16 @@ export class Team_project extends Simulation {
                 this.light_position = Mat4.translation(0,0,0).times(planet_position);
             }
         }
-        const planet_position = program_state.camera_transform.times(vec4(0, 0, 0, 1)); 
-        console.log("inverse?" + program_state.camera_inverse)
+        //const planet_position = program_state.camera_transform.times(vec4(0, 0, 0, 1)); 
+        //console.log("inverse?" + program_state.camera_inverse)
 
-        this.light_position = Mat4.translation(0,0,-1).times(program_state.camera_transform.times(vec4(0, 0, 0, 1)));
-        //this.light_position = program_state.camera_inverse;
+        let base_pos = Mat4.identity().times(Mat4.translation(0.01*Math.sin(t/900), 0.1*Math.sin(t/900), -2)).times(vec4(0, 0, 0, 1));
+        this.light_position = program_state.camera_transform.times(base_pos);
+        //this.light_position = program_state.camera_transform.times(vec4(0, 0, 0, 1));
+
+        let base_p= Mat4.identity().times(Mat4.translation(2.5,-1.5,-1));
+        //this.light_position = program_state.camera_transform.times(base_p);
+        
 
 
         //this.light_position = vec4(3, 6, 0, 1);
@@ -472,15 +523,25 @@ export class Team_project extends Simulation {
             0.667 + Math.sin(t/3500) / 3,
             1
         );
-        //this.light_color = color(1,1,1,1);
+        this.light_color = color(1,1,1,1);
 
         // This is a rough target of the light.
         // Although the light is point light, we need a target to set the POV of the light
-        this.light_view_target = vec4(this.light_position[0], this.light_position[1], this.light_position[2] - 10, 1);
-        //this.light_view_target = vec4(0,0,0, 1);
-        this.light_field_of_view = 130 * Math.PI / 180; // 130 degree
+        //this.light_view_target = vec4(this.light_position[0], this.light_position[1], this.light_position[2] - 10, 1);
+        let base_transform = Mat4.identity().times(Mat4.translation(0.01*Math.sin(t/900), 0.1*Math.sin(t/900),-5)).times(vec4(0, 0, 0, 1));
+        let testing = program_state.camera_transform.times(base_transform);
+        console.log("testing");
+        console.log(testing);
+        this.light_view_target = testing;
+        
+        this.flashlight_COI = testing;
+        //this.shapes.blender_cube.draw(context, program_state, testing, this.stars);
 
-        program_state.lights = [new Light(this.light_position, this.light_color, 1000)];
+        //this.light_view_target = vec4(0,0,0, 1);
+        
+        this.light_field_of_view = 150 * Math.PI / 180; // 130 degree
+
+        program_state.lights = [new Light(this.light_position, this.light_color, 100)];
 
         // Step 1: set the perspective and camera to the POV of light
         const light_view_mat = Mat4.look_at(
@@ -495,6 +556,7 @@ export class Team_project extends Simulation {
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
         // Prepare uniforms
         program_state.light_view_mat = light_view_mat;
+        //program_state.light_view_mat = program_state.camera_inverse;
         program_state.light_proj_mat = light_proj_mat;
         program_state.light_tex_mat = light_proj_mat;
         program_state.view_mat = light_view_mat;
@@ -523,11 +585,11 @@ export class Team_project extends Simulation {
         // update_state():  Override the base time-stepping code to say what this particular
         // scene should do to its bodies every frame -- including applying forces.
         // Generate additional moving bodies if there ever aren't enough:
-        //console.log("Hello world");
-        while (this.bodies.length < 100)
-            this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(1, 1 + Math.random(), 1))
-                .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
-                    vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));
+        // //console.log("Hello world");
+        // while (this.bodies.length < 100)
+        //     this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(1, 1 + Math.random(), 1))
+        //         .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
+        //             vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));
 
         for (let b of this.bodies) {
             // Gravity on Earth, where 1 unit in world space = 1 meter:
