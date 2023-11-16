@@ -1,4 +1,4 @@
-//import { Simulation } from './examples/control-demo.js';
+import { Simulation } from './examples/control-demo.js';
 import {defs, tiny} from './examples/common.js';
 import {Body, Test_Data} from "./examples/collisions-demo.js";
 // Pull these names into this module's scope for convenience:
@@ -30,77 +30,8 @@ const Square =
         }
     }
 
-export class Simulation extends Scene {
-    // **Simulation** manages the stepping of simulation time.  Subclass it when making
-    // a Scene that is a physics demo.  This technique is careful to totally decouple
-    // the simulation from the frame rate (see below).
-    constructor() {
-        super();
-        Object.assign(this, {time_accumulator: 0, time_scale: 1/1000.0, t: 0, dt: 1 / 50, bodies: [], steps_taken: 0});
-    }
-
-    simulate(frame_time) {
-        // simulate(): Carefully advance time according to Glenn Fiedler's
-        // "Fix Your Timestep" blog post.
-        // This line gives ourselves a way to trick the simulator into thinking
-        // that the display framerate is running fast or slow:
-        frame_time = this.time_scale * frame_time;
-
-        // Avoid the spiral of death; limit the amount of time we will spend
-        // computing during this timestep if display lags:
-        this.time_accumulator += Math.min(frame_time, 0.1);
-        // Repeatedly step the simulation until we're caught up with this frame:
-        while (Math.abs(this.time_accumulator) >= this.dt) {
-            // Single step of the simulation for all bodies:
-            this.update_state(this.dt);
-            for (let b of this.bodies)
-                b.advance(this.dt);
-            // Following the advice of the article, de-couple
-            // our simulation time from our frame rate:
-            this.t += Math.sign(frame_time) * this.dt;
-            this.time_accumulator -= Math.sign(frame_time) * this.dt;
-            this.steps_taken++;
-        }
-        // Store an interpolation factor for how close our frame fell in between
-        // the two latest simulation time steps, so we can correctly blend the
-        // two latest states and display the result.
-        let alpha = this.time_accumulator / this.dt;
-        for (let b of this.bodies) b.blend_state(alpha);
-    }
-
-    make_control_panel() {
-        // make_control_panel(): Create the buttons for interacting with simulation time.
-        this.key_triggered_button("Speed up time", ["Shift", "T"], () => this.time_scale *= 5);
-        this.key_triggered_button("Slow down time", ["t"], () => this.time_scale /= 5);
-        this.new_line();
-        this.live_string(box => {
-            box.textContent = "Time scale: " + this.time_scale
-        });
-        this.new_line();
-        this.live_string(box => {
-            box.textContent = "Fixed simulation time step size: " + this.dt
-        });
-        this.new_line();
-        this.live_string(box => {
-            box.textContent = this.steps_taken + " timesteps were taken so far."
-        });
-    }
-
-    display(context, program_state) {
-        // display(): advance the time and state of our whole simulation.
-        if (program_state.animate)
-            this.simulate(program_state.animation_delta_time);
-        // Draw each shape at its current location:
-        for (let b of this.bodies)
-            b.shape.draw(context, program_state, b.drawn_location, b.material);
-    }
-
-    update_state(dt)      // update_state(): Your subclass of Simulation has to override this abstract function.
-    {
-        throw "Override this"
-    }
-}
     
+
 
 // The scene
 export class Team_project extends Simulation {
@@ -131,11 +62,12 @@ export class Team_project extends Simulation {
         let moon;
         let agent_body;
         let flashlight_COI;
+        let shadowView = false;
 
         // For the teapot
-        this.stars = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(.5, .5, .5, 1),
-            ambient: .4, diffusivity: .5, specularity: .5,
+        this.stars = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: .5,
             color_texture: new Texture("assets/stars.png"),
             light_depth_texture: null
         });
@@ -146,25 +78,26 @@ export class Team_project extends Simulation {
         //     }),
 
         // For the flashlight
-        this.flash = new Material(new Shadow_Textured_Phong_Shader(1), {
+        this.flash = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
             color: color(.0, .0, .0, 1),
-            ambient: .9, diffusivity: .5, specularity: .5,
+            ambient: 1, diffusivity: 1, specularity: .5,
             color_texture: new Texture("assets/flash.png"),
             light_depth_texture: null
         });
         // For the flashlight
-        this.pic2 = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(.0, .0, .0, 1),
-            ambient: .9, diffusivity: .5, specularity: .5,
-            color_texture: new Texture("assets/text.png"),
+        this.pic2 = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(1, 1, 1, 1),
+            ambient: .4, diffusivity: .5, specularity: .5,
+            color_texture: new Texture("assets/rgb.jpg"),
             light_depth_texture: null
         });
 
         // For the Picture
-        this.pic = new Material(new Texture_Scroll_X(), {
-            color: hex_color("#000000"),
-            ambient: 1, diffusivity: 1.0, specularity: 0.5,
-            texture: new Texture("assets/sh.png", "LINEAR_MIPMAP_LINEAR")
+        this.pic = new Material(new Shadow_Scroll_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: .4, diffusivity: .5, specularity: .5,
+            color_texture: new Texture("assets/sh.png"),
+            light_depth_texture: null
         });
         // texture2: new Material(new Texture_Scroll_X(), {
         //     color: hex_color("#000000"),
@@ -173,35 +106,35 @@ export class Team_project extends Simulation {
         // }),
 
         // For the table
-        this.wood = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(0, 0, 0, 1),
-            ambient: 0.5, diffusivity: 1, specularity: .5,
+        this.wood = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: .4, diffusivity: 1, specularity: .5,
             color_texture: new Texture("assets/texture01.png"),
             light_depth_texture: null
         });
 
         // For the monster
-        this.mon = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: color(.0, .0, .0, 1),
-            ambient: 0.5, diffusivity: .5, specularity: .5,
+        this.mon = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: .4, diffusivity: 1, specularity: .5,
             color_texture: new Texture("assets/full_low_body__BaseColor.png"),
             light_depth_texture: null
         });
 
         // For the floor or other plain objects
-        this.floor = new Material(new Shadow_Textured_Phong_Shader(1), {
-            color: hex_color("#cc0000"),
-            ambient: 0, diffusivity: 0.5, specularity: 0.4, smoothness: 64,
-            color_texture: null,
-            light_depth_texture: null
-        })
-        // // For the floor or other plain objects
-        // this.floor = new Material(new Shadow_Textured_Phong_Shader(1), {
-        //     color: hex_color("#de3163"),
+        // this.floor = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+        //     color: hex_color("#cc0000"),
         //     ambient: 0, diffusivity: 0.5, specularity: 0.4, smoothness: 64,
-        //     color_texture: new Texture("assets/full_low_body__BaseColor.png"),
+        //     color_texture: null,
         //     light_depth_texture: null
         // })
+        // For the floor or other plain objects
+        this.floor = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/grid.png"),
+            light_depth_texture: null
+        })
         // For the first pass
         this.pure = new Material(new Color_Phong_Shader(), {
         })
@@ -220,9 +153,9 @@ export class Team_project extends Simulation {
 
         // The agent
         // this.agent = new defs.Subdivision_Sphere(4);
-        this.agent = new Shape_From_File("assets/teapot.obj");
-        this.agent_pos = vec3(1.2, 1, 3.5);
-        this.agent_size = 1.0;
+        this.agent = new Shape_From_File("assets/monster.obj");
+        this.agent_pos = vec3(1.2, 1.9, 3.5);
+        this.agent_size = 0.5;
 
         this.control = {};
         this.control.w = false;
@@ -244,18 +177,22 @@ export class Team_project extends Simulation {
         // buttons with key bindings for affecting this scene, and live info readouts.
         this.control_panel.innerHTML += "Test control panel!!: ";
         // The next line adds a live text readout of a data member of our Scene.
-        this.live_string(box => {
-            box.textContent = (this.hover ? 0 : (this.t % (2 * Math.PI)).toFixed(2)) + " radians"
-        });
+        // this.live_string(box => {
+        //     box.textContent = (this.hover ? 0 : (this.t % (2 * Math.PI)).toFixed(2)) + " radians"
+        // });
         this.new_line();
         this.new_line();
         // Add buttons so the user can actively toggle data members of our Scene:
-        this.key_triggered_button("H", ["h"], function () {
+        this.key_triggered_button("Toggle_Light", ["h"], function () {
             this.hover ^= 1;
         });
         this.new_line();
-        this.key_triggered_button("S", ["m"], function () {
+        this.key_triggered_button("Bouncy", ["b"], function () {
             this.swarm ^= 1;
+        });
+        this.new_line();
+        this.key_triggered_button("ShadowView", ["l"], function () {
+            this.shadowView ^= 1;
         });
         this.new_line();
         this.key_triggered_button("Foward", ["Shift", "W"],
@@ -271,7 +208,7 @@ export class Team_project extends Simulation {
         this.key_triggered_button("Speed Up",  [" "],
             () => this.control.space = true, '#6E6460', () => this.control.space = false);
             this.new_line();
-            this.key_triggered_button("Attach to object", ["m"], () => this.attached = () => this.moon);
+            this.key_triggered_button("Attach to object", ["y"], () => this.attached = () => this.moon);
         }
 
     texture_buffer_init(gl) {
@@ -400,7 +337,7 @@ export class Team_project extends Simulation {
         // this.shapes.sphere.draw(context, program_state, model_trans_ball_4, shadow_pass? this.floor : this.pure);
 
         this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
-        this.shapes.monster.draw(context, program_state, model_trans_ball_2, shadow_pass? this.mon : this.pure);
+        this.shapes.teapot.draw(context, program_state, model_trans_ball_2, shadow_pass? this.stars : this.pure);
 
             
         let agent_trans = Mat4.translation(this.agent_pos[0], this.agent_pos[1], this.agent_pos[2]).
@@ -409,7 +346,7 @@ export class Team_project extends Simulation {
         // console.log("moon!!" + this.moon);
         //() => this.attached = () => this.agent_trans_;
 
-        this.agent_body = new Body(this.agent.draw(context, program_state, agent_trans, shadow_pass? this.stars : this.pure));
+        this.agent_body = new Body(this.agent.draw(context, program_state, agent_trans, shadow_pass? this.mon : this.pure));
 
     
         if (this.attached){
@@ -420,23 +357,10 @@ export class Team_project extends Simulation {
                 const eye = planet_position.plus(vec3(0, 5, 9)); // Set the camera position relative to the planet
                 const target = planet_position; // Set the camera target to the planet's position
         
-                // Set the camera to follow the attached planet
-                //program_state.set_camera(Mat4.look_at(eye, target, vec3(0, 1, 0)));       
-                //let desired =  Mat4.look_at(eye, target, vec3(0, 1, 0))
-                //
-
-                //let blending_factor = 0.1;
-                
-                //program_state.camera_inverse = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor));
-                               // Set the camera to follow the attached planet
-                //program_state.set_camera(Mat4.look_at(eye, target, vec3(0, 1, 0)));       
                 let desired =  Mat4.look_at(eye, target, vec3(0, 1, 0))
-                //
 
                 let blending_factor = 1.0;
-                //console.log(program_state.camera_inverse[i]);
-                //let pos = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor))
-                
+
                 program_state.camera_inverse = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor));
             }
         }
@@ -446,14 +370,9 @@ export class Team_project extends Simulation {
         let base_transform = Mat4.identity().times(Mat4.scale(0.5,0.5,0.5).times(Mat4.translation(2.5 + 0.01*Math.sin(t/900),-1.5 + 0.1*Math.sin(t/900),-6)));
         this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
         
-        //this.shapes.blender_cube.draw(context, program_state, this.flashlight_COI, shadow_pass? this.stars : this.pure);
-
         let model_transform = Mat4.identity();
         this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
-        // for some reasion the textures after are exactly the one before when using the other things.
-        this.shapes.picture.draw(context, program_state, Mat4.translation(-5,2,0).times(model_transform), this.pic.override({texture: new Texture("assets/sh.png", "LINEAR_MIPMAP_LINEAR")}));
         this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
-        this.shapes.picture.draw(context, program_state, Mat4.translation(0, 1, 0).times(model_trans_ball_4), this.pic);
     }
 
     display(context, program_state) {
@@ -482,32 +401,11 @@ export class Team_project extends Simulation {
             this.children.push(context.scratchpad.controls = new defs.Movement_Controls_2());
             //Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(Mat4.look_at(
-                vec3(0, 1.1, 10.1),
-                vec3(0, 1.1, 0),
+                vec3(0, 1.9, 10.1),
+                vec3(0, 1.9, 0),
                 vec3(0, 1, 0)
             )); // Locate the camera here
         }
-        // console.log("cam transform?");
-        // console.log(program_state.camera_transform);
-
-        // if (this.attached){
-        //     if (this.attached() != null){
-        //         console.log(this.attached());
-        //         //program_state.set_camera(this.attached().times(Mat4.translation(0,0,5)));     
-        //         const planet_position = this.attached().times(vec4(0, 0, 0, 1)).to3(); // Get the position of the attached planet
-        //         const eye = planet_position.plus(vec3(0, 9, 9)); // Set the camera position relative to the planet
-        //         const target = planet_position; // Set the camera target to the planet's position
-        
-        //         // Set the camera to follow the attached planet
-        //         program_state.set_camera(Mat4.look_at(eye, target, vec3(0, 1, 0)));       
-        //         //let desired =  Mat4.look_at(eye, target, vec3(0, 1, 0))
-        //         //
-
-        //         //let blending_factor = 0.1;
-                
-        //         //program_state.camera_inverse = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor));
-        //     }
-        // }
 
 
         // The position of the light
@@ -536,12 +434,12 @@ export class Team_project extends Simulation {
 
         //this.light_position = vec4(3, 6, 0, 1);
         // The color of the light
-        this.light_color = color(
-            0.667 + Math.sin(t/500) / 3,
-            0.667 + Math.sin(t/1500) / 3,
-            0.667 + Math.sin(t/3500) / 3,
-            1
-        );
+        // this.light_color = color(
+        //     0.667 + Math.sin(t/500) / 3,
+        //     0.667 + Math.sin(t/1500) / 3,
+        //     0.667 + Math.sin(t/3500) / 3,
+        //     1
+        // );
         this.light_color = color(1,1,1,1);
 
         // This is a rough target of the light.
@@ -558,12 +456,12 @@ export class Team_project extends Simulation {
 
         //this.light_view_target = vec4(0,0,0, 1);
         
-        this.light_field_of_view = 150 * Math.PI / 180; // 130 degree
+        this.light_field_of_view = 90 * Math.PI / 180; // 130 degree
         program_state.lights = [new Light(this.light_position, this.light_color, 90)];
         if(!this.hover){
-            program_state.lights = [new Light(this.light_position, this.light_color, 300)];
+            program_state.lights = [new Light(this.light_position, this.light_color, 1000)];
         }else{
-            program_state.lights = [new Light(this.light_position, this.light_color, 1)];
+            program_state.lights = [new Light(this.light_position, this.light_color, 0)];
         }
 
 
@@ -573,7 +471,7 @@ export class Team_project extends Simulation {
             vec3(this.light_view_target[0], this.light_view_target[1], this.light_view_target[2]),
             vec3(0, 1, 0), // assume the light to target will have a up dir of +y, maybe need to change according to your case
         );
-        const light_proj_mat = Mat4.perspective(this.light_field_of_view, 1, 0.5, 500);
+        const light_proj_mat = Mat4.perspective(this.light_field_of_view, 1, 0.5, 100);
         // Bind the Depth Texture Buffer
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
         gl.viewport(0, 0, this.lightDepthTextureSize, this.lightDepthTextureSize);
@@ -597,12 +495,15 @@ export class Team_project extends Simulation {
         this.render_scene(context, program_state, true,true, true);
 
         // //Step 3: display the textures
-        this.shapes.square_2d.draw(context, program_state,
-            Mat4.translation(-.99, .08, 0).times(
-            Mat4.scale(0.5, 0.5 * gl.canvas.width / gl.canvas.height, 1)
-            ),
-            this.depth_tex.override({texture: this.lightDepthTexture})
-        );
+        if (this.shadowView){
+            this.shapes.square_2d.draw(context, program_state,
+                Mat4.translation(-.99, .08, 0).times(
+                Mat4.scale(0.5, 0.5 * gl.canvas.width / gl.canvas.height, 1)
+                ),
+                this.depth_tex.override({texture: this.lightDepthTexture})
+            );            
+        }
+
 
     }
 
@@ -612,10 +513,13 @@ export class Team_project extends Simulation {
         // scene should do to its bodies every frame -- including applying forces.
         // Generate additional moving bodies if there ever aren't enough:
         // //console.log("Hello world");
-        // while (this.bodies.length < 100)
-        //     this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(1, 1 + Math.random(), 1))
-        //         .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
-        //             vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));
+        if (this.swarm){
+            while (this.bodies.length < 100)
+                this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(1, 1 + Math.random(), 1))
+                    .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
+                        vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));            
+        }
+
 
         for (let b of this.bodies) {
             // Gravity on Earth, where 1 unit in world space = 1 meter:
@@ -1009,3 +913,195 @@ class Texture_Rotate extends Textured_Phong {
 }
     
     
+class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
+    fragment_glsl_code() {
+        // ********* FRAGMENT SHADER *********
+        // A fragment is a pixel that's overlapped by the current triangle.
+        // Fragments affect the final image or get discarded due to depth.
+        return this.shared_glsl_code() + `
+            varying vec2 f_tex_coord;
+            uniform sampler2D texture;
+            uniform sampler2D light_depth_texture;
+            uniform mat4 light_view_mat;
+            uniform mat4 light_proj_mat;
+            uniform float animation_time;
+            uniform float light_depth_bias;
+            uniform bool use_texture;
+            uniform bool draw_shadow;
+            uniform float light_texture_size;
+            uniform float fog_start;
+            uniform float fog_end;
+            
+            float PCF_shadow(vec2 center, float projected_depth) {
+                float shadow = 0.0;
+                float texel_size = 1.0 / light_texture_size;
+                for(int x = -1; x <= 1; ++x)
+                {
+                    for(int y = -1; y <= 1; ++y)
+                    {
+                        float light_depth_value = texture2D(light_depth_texture, center + vec2(x, y) * texel_size).r; 
+                        shadow += projected_depth >= light_depth_value + light_depth_bias ? 1.0 : 0.0;        
+                    }    
+                }
+                shadow /= 9.0;
+                return shadow;
+            }
+            
+            void main(){
+                // Sample the texture image in the correct place:
+                vec4 tex_color = texture2D( texture, f_tex_coord );
+                if (!use_texture)
+                    tex_color = vec4(0, 0, 0, 1);
+                if( tex_color.w < .01 ) discard;
+                
+                // Compute an initial (ambient) color:
+                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                
+                // Compute the final color with contributions from lights:
+                vec3 diffuse, specular;
+                vec3 other_than_ambient = phong_model_lights( normalize( N ), vertex_worldspace, diffuse, specular );
+                
+
+
+                vec3 final_color = gl_FragColor.xyz;
+
+                float fog_density = 0.2;
+
+                // Simulate fog based on distance from the camera:
+                float fog_distance = length(vertex_worldspace - camera_center);
+
+                float fog_factor = clamp((fog_distance - 10.0) / (40.0 - 10.0), 0.0, 1.0);
+
+                // Use an exponential function for fog density
+                fog_factor = 1.0 - exp(-fog_density * fog_distance);
+            
+                fog_factor = clamp(fog_factor, 0.0, 1.0);
+                vec3 fog_color = vec3(0, 0, 0); // Adjust the fog color
+                gl_FragColor.xyz = mix(final_color, fog_color, fog_factor);
+
+                // Deal with shadow:
+                if (draw_shadow) {
+                    vec4 light_tex_coord = (light_proj_mat * light_view_mat * vec4(vertex_worldspace, 1.0));
+                    // convert NDCS from light's POV to light depth texture coordinates
+                    light_tex_coord.xyz /= light_tex_coord.w; 
+                    light_tex_coord.xyz *= 0.5;
+                    light_tex_coord.xyz += 0.5;
+                    float light_depth_value = texture2D( light_depth_texture, light_tex_coord.xy ).r;
+                    float projected_depth = light_tex_coord.z;
+                    
+                    bool inRange =
+                        light_tex_coord.x >= 0.0 &&
+                        light_tex_coord.x <= 1.0 &&
+                        light_tex_coord.y >= 0.0 &&
+                        light_tex_coord.y <= 1.0;
+                          
+                    float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
+                    
+                    if (inRange && shadowness > 0.3) {
+                        diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
+                        specular *= 1.0 - shadowness;
+                    }
+                }
+                
+                gl_FragColor.xyz += diffuse + specular;
+            } `;
+    }
+}
+
+class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Phong_Shader {
+
+    fragment_glsl_code() {
+        // ********* FRAGMENT SHADER *********
+        // A fragment is a pixel that's overlapped by the current triangle.
+        // Fragments affect the final image or get discarded due to depth.
+        return this.shared_glsl_code() + `
+            varying vec2 f_tex_coord;
+            uniform sampler2D texture;
+            uniform sampler2D light_depth_texture;
+            uniform mat4 light_view_mat;
+            uniform mat4 light_proj_mat;
+            uniform float animation_time;
+            uniform float light_depth_bias;
+            uniform bool use_texture;
+            uniform bool draw_shadow;
+            uniform float light_texture_size;
+            
+            float PCF_shadow(vec2 center, float projected_depth) {
+                float shadow = 0.0;
+                float texel_size = 1.0 / light_texture_size;
+                for(int x = -1; x <= 1; ++x)
+                {
+                    for(int y = -1; y <= 1; ++y)
+                    {
+                        float light_depth_value = texture2D(light_depth_texture, center + vec2(x, y) * texel_size).r; 
+                        shadow += projected_depth >= light_depth_value + light_depth_bias ? 1.0 : 0.0;        
+                    }    
+                }
+                shadow /= 9.0;
+                return shadow;
+            }
+            
+            void main(){
+                // Sample the texture image in the correct place:
+                vec2 f_tex_2 = f_tex_coord;
+                vec2 f_tex_3 = vec2(f_tex_2.s - 2.0 * animation_time, f_tex_2.t);
+
+                vec4 tex_color = texture2D( texture, f_tex_3 );
+                if (!use_texture)
+                    tex_color = vec4(0, 0, 0, 1);
+                if( tex_color.w < .01 ) discard;
+                
+                // Compute an initial (ambient) color:
+                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                
+                // Compute the final color with contributions from lights:
+                vec3 diffuse, specular;
+                vec3 other_than_ambient = phong_model_lights( normalize( N ), vertex_worldspace, diffuse, specular );
+                
+                vec3 final_color = gl_FragColor.xyz;
+
+                float fog_density = 0.2;
+
+                // Simulate fog based on distance from the camera:
+                float fog_distance = length(vertex_worldspace - camera_center);
+
+                float fog_factor = clamp((fog_distance - 10.0) / (40.0 - 10.0), 0.0, 1.0);
+
+                // Use an exponential function for fog density
+                fog_factor = 1.0 - exp(-fog_density * fog_distance);
+            
+                fog_factor = clamp(fog_factor, 0.0, 1.0);
+                vec3 fog_color = vec3(0, 0, 0); // Adjust the fog color
+                gl_FragColor.xyz = mix(final_color, fog_color, fog_factor);
+                
+                // Deal with shadow:
+                if (draw_shadow) {
+                    vec4 light_tex_coord = (light_proj_mat * light_view_mat * vec4(vertex_worldspace, 1.0));
+                    // convert NDCS from light's POV to light depth texture coordinates
+                    light_tex_coord.xyz /= light_tex_coord.w; 
+                    light_tex_coord.xyz *= 0.5;
+                    light_tex_coord.xyz += 0.5;
+                    float light_depth_value = texture2D( light_depth_texture, light_tex_coord.xy ).r;
+                    float projected_depth = light_tex_coord.z;
+                    
+                    bool inRange =
+                        light_tex_coord.x >= 0.0 &&
+                        light_tex_coord.x <= 1.0 &&
+                        light_tex_coord.y >= 0.0 &&
+                        light_tex_coord.y <= 1.0;
+                          
+                    float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
+                    
+                    if (inRange && shadowness > 0.3) {
+                        diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
+                        specular *= 1.0 - shadowness;
+                    }
+                }
+                
+                gl_FragColor.xyz += diffuse + specular;
+
+                //vec3 final_color = gl_FragColor.xyz;
+
+            } `;
+    }
+}
