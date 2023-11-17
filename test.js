@@ -631,7 +631,7 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
         constructor() {
             super();
             const data_members = {
-                roll: 0, look_around_locked: false,
+                roll: 0, look_around_locked: false, fps_look: false,
                 thrust: vec3(0, 0, 0), pos: vec3(0, 0, 0), z_axis: vec3(0, 0, 0),
                 radians_per_frame: 1 / 200, meters_per_frame: 4, speed_multiplier: 0.5
             };
@@ -650,6 +650,24 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             this.walls.push(model_trans_wall_2);
             this.walls.push(model_trans_wall_3);
             this.walls.push(model_trans_wall_4);
+
+            // Initialize variables to track accumulated mouse movement
+            let accumulatedMouseX = 0;
+            let accumulatedMouseY = 0;
+            this.first = true;     
+
+            this.y_axis_rotation_matrix = Mat4.identity();
+        }
+
+        // Function to recenter the mouse
+        recenterMouse(context) {
+            // const center = [0, 0];
+            this.accumulatedMouseX = 0;
+            this.accumulatedMouseY = 0;
+
+            // Reset the mouse position to the center
+            context.canvas.requestPointerLock = context.canvas.requestPointerLock || context.canvas.mozRequestPointerLock;
+            context.canvas.requestPointerLock();
         }
 
         set_recipient(matrix_closure, inverse_closure) {
@@ -686,14 +704,19 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             canvas.addEventListener("mousemove", e => {
                 e.preventDefault();
                 this.mouse.from_center = mouse_position(e);
-                this.mouse.from_center = [this.mouse.from_center[0], 0];
+                this.mouse.from_center = [this.mouse.from_center[0], this.mouse.from_center[1]];
                 //console.log(this.mouse.from_center[0])
                 //console.log(this.mouse.from_center[1])
                 //console.log(this.mouse.from_center)
+
+                // e.movementX and e.movementY provide the change in mouse position
+                this.accumulatedMouseX += e.movementX || e.mozMovementX || 0;
+                this.accumulatedMouseY += e.movementY || e.mozMovementY || 0;
+
             });
-            canvas.addEventListener("mouseout", e => {
-                if (!this.mouse.anchor) this.mouse.from_center.scale_by(0)
-            });
+            // canvas.addEventListener("mouseout", e => {
+            //     if (!this.mouse.anchor) this.mouse.from_center.scale_by(0)
+            // });
         }
 
         show_explanation(document_element) {
@@ -736,6 +759,8 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             this.new_line();
             this.key_triggered_button("(Un)freeze mouse look around", ["g"], () => this.look_around_locked ^= 1, "#8B8885");
             this.new_line();
+            this.key_triggered_button("Toggle FPS look around", ["0"], () => this.fps_look ^= 1, "#8B8885");
+            this.new_line();
             // this.key_triggered_button("Go to world origin", ["r"], () => {
             //     this.matrix().set_identity(4, 4);
             //     this.inverse().set_identity(4, 4)
@@ -751,10 +776,10 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             //     this.inverse().set(Mat4.look_at(vec3(10, 0, 0), vec3(0, 0, 0), vec3(0, 1, 0)));
             //     this.matrix().set(Mat4.inverse(this.inverse()));
             // }, "#8B8885");
-            // this.key_triggered_button("from rear", ["3"], () => {
-            //     this.inverse().set(Mat4.look_at(vec3(0, 0, -10), vec3(0, 0, 0), vec3(0, 1, 0)));
-            //     this.matrix().set(Mat4.inverse(this.inverse()));
-            // }, "#8B8885");
+            this.key_triggered_button("from rear", ["3"], () => {
+                this.inverse().set(Mat4.look_at(vec3(0, 0, -10), vec3(0, 0, 0), vec3(0, 1, 0)));
+                this.matrix().set(Mat4.inverse(this.inverse()));
+            }, "#8B8885");
             // this.key_triggered_button("from left", ["4"], () => {
             //     this.inverse().set(Mat4.look_at(vec3(-10, 0, 0), vec3(0, 0, 0), vec3(0, 1, 0)));
             //     this.matrix().set(Mat4.inverse(this.inverse()));
@@ -770,35 +795,84 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
         first_person_flyaround(radians_per_frame, meters_per_frame, leeway = 50) {
             // (Internal helper function)
             // Compare mouse's location to all four corners of a dead box:
-            const offsets_from_dead_box = {
+            let offsets_from_dead_box = {
                 plus: [this.mouse.from_center[0] + leeway, this.mouse.from_center[1] + leeway],
                 minus: [this.mouse.from_center[0] - leeway, this.mouse.from_center[1] - leeway]
             };
+
+            if (this.fps_look){
+                offsets_from_dead_box = {
+                    plus: [this.accumulatedMouseX, this.accumulatedMouseY],
+                    minus: [this.accumulatedMouseX, this.accumulatedMouseY]
+                };
+            }else{
+                offsets_from_dead_box = {
+                    plus: [this.mouse.from_center[0] + leeway, this.mouse.from_center[1] + leeway],
+                    minus: [this.mouse.from_center[0] - leeway, this.mouse.from_center[1] - leeway]
+                };
+            }
+
+            
             // Apply a camera rotation movement, but only when the mouse is
             // past a minimum distance (leeway) from the canvas's center:
-            if (!this.look_around_locked)
+            if (!this.look_around_locked){
                 // If steering, steer according to "mouse_from_center" vector, but don't
                 // start increasing until outside a leeway window from the center.
-                for (let i = 0; i < 2; i++) {                                     // The &&'s in the next line might zero the vectors out:
-                    let o = offsets_from_dead_box,
-                        velocity = ((o.minus[i] > 0 && o.minus[i]) || (o.plus[i] < 0 && o.plus[i])) * radians_per_frame;
-                    // On X step, rotate around Y axis, and vice versa.
-                    this.matrix().post_multiply(Mat4.rotation(-velocity, i, 1 - i, 0));
-                    this.inverse().pre_multiply(Mat4.rotation(+velocity, i, 1 - i, 0));
-                }
-            this.matrix().post_multiply(Mat4.rotation(-.1 * this.roll, 0, 0, 1));
-            this.inverse().pre_multiply(Mat4.rotation(+.1 * this.roll, 0, 0, 1));
-            // Now apply translation movement of the camera, in the newest local coordinate frame.
-            this.matrix().post_multiply(Mat4.translation(...this.thrust.times(-meters_per_frame)));
-            this.inverse().pre_multiply(Mat4.translation(...this.thrust.times(+meters_per_frame)));
+                // for (let i = 0; i < 2; i++) {                                     // The &&'s in the next line might zero the vectors out:
+                //     let o = offsets_from_dead_box,
+                //         velocity = ((o.minus[i] > 0 && o.minus[i]) || (o.plus[i] < 0 && o.plus[i])) * radians_per_frame;
+                //     // On X step, rotate around Y axis, and vice versa.
+                //     this.matrix().post_multiply(Mat4.rotation(-velocity, i, 1 - i, 0));
+                //     this.inverse().pre_multiply(Mat4.rotation(+velocity, i, 1 - i, 0));
+                // }
+
+                const o = offsets_from_dead_box;
+
+                // Rotation around the local x-axis (up and down)
+                const up_down_velocity = ((o.minus[1] > 0 && o.minus[1]) || (o.plus[1] < 0 && o.plus[1])) * radians_per_frame;
+                this.matrix().post_multiply(Mat4.rotation(-up_down_velocity, 1, 0, 0));
+                this.inverse().pre_multiply(Mat4.rotation(+up_down_velocity, 1, 0, 0));
+    
+                // Rotation around an arbitrary axis (e.g., the world up vector)
+                const left_right_velocity = ((o.minus[0] > 0 && o.minus[0]) || (o.plus[0] < 0 && o.plus[0])) * radians_per_frame;
+    
+                // Use Rodrigues' rotation formula to rotate around the world up vector
+                const rotation_axis = this.inverse().times(vec4(0, 1, 0, 0)).to3().normalized();
+                const rotation_matrix = Mat4.rotation(-left_right_velocity, ...rotation_axis);
+                const rotation_matrix2 = Mat4.rotation(left_right_velocity, ...rotation_axis);
+    
+                this.matrix().post_multiply(rotation_matrix);
+                this.inverse().pre_multiply(rotation_matrix2);
+
+            }
+
+            // this.matrix().post_multiply(Mat4.translation(...this.thrust.times(-meters_per_frame)));
+            // this.inverse().pre_multiply(Mat4.translation(...this.thrust.times(+meters_per_frame)));
+
+            // Get the camera matrix
+            const cameraMatrix = this.inverse();
+
+            // Get the camera's up vector in world coordinates
+            const worldUp = cameraMatrix.times(vec4(0, 1, 0, 0)).to3().normalized();
+
+            // Project the movement vector onto the floor (perpendicular to the up vector)
+            const localTranslation = this.thrust.times(-meters_per_frame);
+            const localTranslation2 = this.thrust.times(+meters_per_frame);
+            const projectedTranslation = localTranslation.minus(worldUp.times(localTranslation.dot(worldUp)));
+            const projectedTranslation2 = localTranslation2.minus(worldUp.times(localTranslation2.dot(worldUp)));
+
+            // Apply the projected translation to the camera matrix
+            this.matrix().post_multiply(Mat4.translation(...projectedTranslation));
+            this.inverse().pre_multiply(Mat4.translation(...projectedTranslation2));
+
 
             // const movementVector = this.thrust.times(-meters_per_frame);
             //console.log(movementVector);
 
             // Convert the local movement vector to world coordinates
             // const worldMovementVector = this.matrix().times(movementVector.to4(0)).to3();
-            //console.log(worldMovementVector);
-            //return worldMovementVector;
+            // console.log(worldMovementVector);
+            // return worldMovementVector;
         }
 
         third_person_arcball(radians_per_frame) {
@@ -873,7 +947,7 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             // const m = this.speed_multiplier * this.meters_per_frame,
             //     r = this.speed_multiplier * this.radians_per_frame;
             const m = this.meters_per_frame,
-                r = this.speed_multiplier * this.radians_per_frame;
+                r = (this.speed_multiplier + 8 * this.fps_look) * this.radians_per_frame ;
 
             if (this.will_take_over_graphics_state) {
                 this.reset(graphics_state);
@@ -884,6 +958,12 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
                 this.add_mouse_controls(context.canvas);
                 this.mouse_enabled_canvases.add(context.canvas)
             }
+
+            console.log("mouse");
+            console.log(this.mouse.from_center);
+            console.log("mouse move in display");
+            console.log(this.accumulatedMouseX);
+            console.log(this.accumulatedMouseY);
             // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
             //const movement_vector = this.first_person_flyaround(dt * r, dt * m);
             this.first_person_flyaround(dt * r, dt * m);
@@ -903,6 +983,30 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
                 // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
                 this.first_person_flyaround(0, dt * m * -1);
             }
+
+            // this.mouse.from_center = vec(0, 0);
+
+            // After using mouse position, recenter the mouse
+            // const center = [context.canvas.width / 2, context.canvas.height / 2];
+            // this.mouse.from_center = vec(this.mouse.from_center[0] - center[0], this.mouse.from_center[1] - center[1]);
+
+            // // // Recenter the mouse in the canvas
+            // context.canvas.requestPointerLock = context.canvas.requestPointerLock || context.canvas.mozRequestPointerLock;
+            // context.canvas.requestPointerLock();
+            if (this.fps_look){
+                if (this.first){
+                    this.recenterMouse(context);  
+                    this.first = false;
+                    console.log("first");
+                }
+                
+                // Call recenterMouse() to initiate the process
+                if  (Math.abs(this.accumulatedMouseX) > 0){
+                    this.recenterMouse(context);                
+                }                
+            }
+
+
         }
     }
 
