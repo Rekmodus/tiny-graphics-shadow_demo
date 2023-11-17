@@ -38,7 +38,7 @@ export class Team_project extends Simulation {
 
 
 
-        const shader = new defs.Fake_Bump_Map(1);
+        //const shader = new defs.Fake_Bump_Map(1);
 
         this.shapes = {
             "teapot": new Shape_From_File("assets/teapot.obj"),
@@ -164,19 +164,6 @@ export class Team_project extends Simulation {
 
         this.data = new Test_Data();
 
-        // this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(0.3, 0.3 + Math.random(), 0.3))
-        // .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
-        //     vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));   
-        // this.walls = [];
-        // let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5)).times(Mat4.identity());
-        // let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8)).times(Mat4.identity());
-        // let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33)).times(Mat4.identity());
-        // let model_trans_wall_4 = Mat4.translation(0, 1, 0).times(Mat4.identity());
-      
-        // this.walls.push(model_trans_wall_1);
-        // this.walls.push(model_trans_wall_2);
-        // this.walls.push(model_trans_wall_3);
-        // this.walls.push(model_trans_wall_4);
     }
 
     random_color() {
@@ -230,6 +217,13 @@ export class Team_project extends Simulation {
         this.light_depth_texture = new Buffered_Texture(this.lightDepthTexture);
         this.stars.light_depth_texture = this.light_depth_texture
         this.floor.light_depth_texture = this.light_depth_texture
+        this.flash.light_depth_texture = this.light_depth_texture
+        this.pic2.light_depth_texture = this.light_depth_texture
+        this.pic.light_depth_texture = this.light_depth_texture
+        this.wood.light_depth_texture = this.light_depth_texture
+        this.mon.light_depth_texture = this.light_depth_texture
+        this.Wall.light_depth_texture = this.light_depth_texture
+
 
         this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
         gl.bindTexture(gl.TEXTURE_2D, this.lightDepthTexture);
@@ -390,39 +384,6 @@ export class Team_project extends Simulation {
         this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
     }
 
-    // collider(nothing){
-    //     const playerSize = vec3(2.5, 2.5, 2.5); // Adjust the size of the player
-
-    //     for (let i = 0; i < this.walls.length; i++) {
-    //         let playerPosition = program_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
-
-    //         const wall = this.walls[i];
-
-
-    //         const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
-    //         const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
-
-    //         const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
-    //         const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
-
-    //         // console.log(i);
-    //         // console.log(adjustedMinExtent);
-    //         // console.log(adjustedMaxExtent);
-        
-    //         if (
-    //             playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
-    //             playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
-    //         ) {
-    //             // Collision detected with wall[i]
-    //             // Handle the collision (e.g., stop the player's movement)
-    //             console.log("Collision with wall " + i);
-    //             return true;
-    //         }else{
-    //             return false;
-    //         }
-    //     }
-    // }
-
     display(context, program_state) {
         const t = program_state.animation_time;
         const gl = context.context;
@@ -454,42 +415,6 @@ export class Team_project extends Simulation {
                 vec3(0, 1, 0)
             )); // Locate the camera here
         }
-
-        // for (let w of this.walls) {
-        //     //console.log("Walls");
-        //     //console.log(w);
-        // }
-
-        // const defaultCubeSize = vec3(2, 2, 2);
-        // const playerSize = vec3(2.5, 2.5, 2.5); // Adjust the size of the player
-
-        // for (let i = 0; i < this.walls.length; i++) {
-        //     let playerPosition = program_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
-
-        //     const wall = this.walls[i];
-
-
-        //     const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
-        //     const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
-
-        //     const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
-        //     const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
-
-        //     // console.log(i);
-        //     // console.log(adjustedMinExtent);
-        //     // console.log(adjustedMaxExtent);
-        
-        //     if (
-        //         playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
-        //         playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
-        //     ) {
-        //         // Collision detected with wall[i]
-        //         // Handle the collision (e.g., stop the player's movement)
-        //         console.log("Collision with wall " + i);
-        //     }
-        // }
-        //console.log("children");
-        //console.log(this.children[0].thrust);
 
         if(Math.abs(this.children[0].thrust[0]) > 0 || Math.abs(this.children[0].thrust[1]) > 0 || Math.abs(this.children[0].thrust[2]) > 0){
             this.moving = true;
@@ -562,6 +487,12 @@ export class Team_project extends Simulation {
             vec3(0, 1, 0), // assume the light to target will have a up dir of +y, maybe need to change according to your case
         );
         const light_proj_mat = Mat4.perspective(this.light_field_of_view, 1, 0.5, 100);
+        // Adjusted light projection matrix to create a circular frustum
+        //const light_proj_mat = Mat4.orthographic(-1.0, 1.0, -1.0, 1.0, 0.5, 100);
+        // Adjusted light projection matrix to create a circular frustum with perspective
+        //const light_proj_mat = Mat4.perspective(60 * Math.PI / 180, 1, 0.5, 100);
+        //const light_proj_mat = Mat4.perspective_circular(this.light_field_of_view, 1, 0.5, 100);
+        
         // Bind the Depth Texture Buffer
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.lightDepthFramebuffer);
         gl.viewport(0, 0, this.lightDepthTextureSize, this.lightDepthTextureSize);
@@ -909,7 +840,7 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
                 // console.log(localPlayerPosition);
                 // console.log(minExtent);
                 // console.log(maxExtent);
-                
+
                 // Simple AABB collision
                 if (
                     playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
@@ -996,6 +927,7 @@ class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
             uniform float fog_start;
             uniform float fog_end;
             
+
             float PCF_shadow(vec2 center, float projected_depth) {
                 float shadow = 0.0;
                 float texel_size = 1.0 / light_texture_size;
@@ -1029,7 +961,7 @@ class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
 
                 vec3 final_color = gl_FragColor.xyz;
 
-                float fog_density = 0.1;
+                float fog_density = 0.15;
 
                 // Simulate fog based on distance from the camera:
                 float fog_distance = length(vertex_worldspace - camera_center);
@@ -1042,6 +974,7 @@ class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
                 fog_factor = clamp(fog_factor, 0.0, 1.0);
                 vec3 fog_color = vec3(0, 0, 0); // Adjust the fog color
                 gl_FragColor.xyz = mix(final_color, fog_color, fog_factor);
+
 
                 // Deal with shadow:
                 if (draw_shadow) {
@@ -1058,13 +991,35 @@ class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
                         light_tex_coord.x <= 1.0 &&
                         light_tex_coord.y >= 0.0 &&
                         light_tex_coord.y <= 1.0;
-                          
+
+                    // Calculate distance from the center of the circular flashlight in screen space
+                    // Slight hard coded animation wobble.. might remove it
+                    vec2 light_screen_center = vec2(0.5 + 0.01*sin(animation_time * 0.009), 0.5 + 0.1*sin(animation_time * 0.009)); // Hardcoded value for testing
+                    vec2 distance_from_center = abs(light_tex_coord.xy - light_screen_center);
+                    float distance = length(distance_from_center);
+
+                    // Modify this threshold as needed
+                    float distance_threshold = 0.02;
+                    float light_radius = 0.3;
+
+                    // Adjust shadow based on distance from the center
+                    float circular_flashlight_attenuation = inRange ? smoothstep(light_radius, light_radius + distance_threshold, distance) : 1.0;
+                
                     float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
+                
+                    // Combine old shadows and circular flashlight effect
+                    float combined_shadow = max(shadowness, circular_flashlight_attenuation);
+                
+                    diffuse *= 0.2 + 0.8 * (1.0 - combined_shadow);
+                    specular *= 1.0 - combined_shadow;
+
+                    ///////      
+                    // float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
                     
-                    if (inRange && shadowness > 0.3) {
-                        diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
-                        specular *= 1.0 - shadowness;
-                    }
+                    // if (inRange && shadowness > 0.3) {
+                    //     diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
+                    //     specular *= 1.0 - shadowness;
+                    // }
                 }
                 
                 gl_FragColor.xyz += diffuse + specular;
@@ -1124,7 +1079,7 @@ class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Phong_Shad
                 
                 vec3 final_color = gl_FragColor.xyz;
 
-                float fog_density = 0.2;
+                float fog_density = 0.15;
 
                 // Simulate fog based on distance from the camera:
                 float fog_distance = length(vertex_worldspace - camera_center);
@@ -1153,13 +1108,34 @@ class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Phong_Shad
                         light_tex_coord.x <= 1.0 &&
                         light_tex_coord.y >= 0.0 &&
                         light_tex_coord.y <= 1.0;
-                          
+
+                    // Calculate distance from the center of the circular flashlight in screen space
+                    // Slight hard coded animation wobble.. might remove it
+                    vec2 light_screen_center = vec2(0.5 + 0.01*sin(animation_time * 0.009), 0.5 + 0.1*sin(animation_time * 0.009)); // Hardcoded value for testing
+                    vec2 distance_from_center = abs(light_tex_coord.xy - light_screen_center);
+                    float distance = length(distance_from_center);
+
+                    // Modify this threshold as needed
+                    float distance_threshold = 0.02;
+                    float light_radius = 0.3;
+
+                    // Adjust shadow based on distance from the center
+                    float circular_flashlight_attenuation = inRange ? smoothstep(light_radius, light_radius + distance_threshold, distance) : 1.0;
+                
                     float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
+                
+                    // Combine old shadows and circular flashlight effect
+                    float combined_shadow = max(shadowness, circular_flashlight_attenuation);
+                
+                    diffuse *= 0.2 + 0.8 * (1.0 - combined_shadow);
+                    specular *= 1.0 - combined_shadow;
+                          
+                    // float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
                     
-                    if (inRange && shadowness > 0.3) {
-                        diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
-                        specular *= 1.0 - shadowness;
-                    }
+                    // if (inRange && shadowness > 0.3) {
+                    //     diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
+                    //     specular *= 1.0 - shadowness;
+                    // }
                 }
                 
                 gl_FragColor.xyz += diffuse + specular;
