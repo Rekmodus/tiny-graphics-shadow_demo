@@ -39,10 +39,18 @@ export class Movement_Controls_2 extends Scene {
             this.walls.push(model_trans_wall_2);
             this.walls.push(model_trans_wall_3);
             this.walls.push(model_trans_wall_4);
+            this.door1 = true
+
+            if (this.walls.includes(model_trans_wall_3)){
+                console.log("wall 3 exists");
+            }else{
+                console.log("no wall");
+            }
+            
 
             // Initialize variables to track accumulated mouse movement
-            let accumulatedMouseX = 0;
-            let accumulatedMouseY = 0;
+            this.accumulatedMouseX = 0;
+            this.accumulatedMouseY = 0;
 
             this.first = true;     // initialize the center of mouse
             this.accumulatedUpDownRotation = 0;
@@ -73,8 +81,6 @@ export class Movement_Controls_2 extends Scene {
             // encountered program_state object.  Targets must be pointer references made using closures.
             this.set_recipient(() => graphics_state.camera_transform,
                 () => graphics_state.camera_inverse);
-
-            //console.log(graphics_state.camera_transform);
         }
 
         add_mouse_controls(canvas) {
@@ -100,9 +106,9 @@ export class Movement_Controls_2 extends Scene {
                 this.accumulatedMouseX += e.movementX || e.mozMovementX || 0;
                 this.accumulatedMouseY += e.movementY || e.mozMovementY || 0;
 
-                console.log("mousemove");
-                console.log(this.accumulatedMouseX);
-                console.log(this.accumulatedMouseY);
+                // console.log("mousemove");
+                // console.log(this.accumulatedMouseX);
+                // console.log(this.accumulatedMouseY);
 
             });
             // canvas.addEventListener("mouseout", e => {
@@ -121,9 +127,10 @@ export class Movement_Controls_2 extends Scene {
                 + ", " + this.pos[2].toFixed(2));
             this.new_line();
             // The facing directions are surprisingly affected by the left hand rule:
-            this.live_string(box => box.textContent = "- Facing: " + ((this.z_axis[0] > 0 ? "West " : "East ")
-                + (this.z_axis[1] > 0 ? "Down " : "Up ") + (this.z_axis[2] > 0 ? "North" : "South")));
+            // this.live_string(box => box.textContent = "- Facing: " + ((this.z_axis[0] > 0 ? "West " : "East ")
+            //     + (this.z_axis[1] > 0 ? "Down " : "Up ") + (this.z_axis[2] > 0 ? "North" : "South")));
             this.new_line();
+            this.control_panel.innerHTML += "Move with wasd. Make sure to NOT have caps lock on.<br>";
             this.new_line();
 
             //this.key_triggered_button("Up", [" "], () => this.thrust[1] = -1, undefined, () => this.thrust[1] = 0);
@@ -140,7 +147,7 @@ export class Movement_Controls_2 extends Scene {
             this.key_triggered_button("-", ["o"], () =>
                 this.speed_multiplier /= 1.2, undefined, undefined, undefined, speed_controls);
             this.live_string(box => {
-                box.textContent = "Speed: " + this.speed_multiplier.toFixed(2)
+                box.textContent = "Sensitivity: " + this.speed_multiplier.toFixed(2)
             }, speed_controls);
             this.key_triggered_button("+", ["p"], () =>
                 this.speed_multiplier *= 1.2, undefined, undefined, undefined, speed_controls);
@@ -152,17 +159,19 @@ export class Movement_Controls_2 extends Scene {
             this.new_line();
             this.key_triggered_button("Toggle FPS look around", ["0"], () => this.fps_look ^= 1, "#8B8885");
             this.new_line();
+            this.key_triggered_button("Door", ["9"], () => this.door1 ^= 1, "#8B8885");
+            this.new_line();
             // this.key_triggered_button("Go to world origin", ["r"], () => {
             //     this.matrix().set_identity(4, 4);
             //     this.inverse().set_identity(4, 4)
             // }, "#8B8885");
             //this.new_line();
 
-            // this.key_triggered_button("Look at origin from front", ["1"], () => {
-            //     this.inverse().set(Mat4.look_at(vec3(0, 0, 10), vec3(0, 0, 0), vec3(0, 1, 0)));
-            //     this.matrix().set(Mat4.inverse(this.inverse()));
-            // }, "#8B8885");
-            // this.new_line();
+            this.key_triggered_button("Look at origin from front", ["2"], () => {
+                this.inverse().set(Mat4.look_at(vec3(0, 1.9, 10.1), vec3(0, 1.9, 0), vec3(0, 1, 0)));
+                this.matrix().set(Mat4.inverse(this.inverse()));
+            }, "#8B8885");
+            // this.new_line();ggg
             // this.key_triggered_button("from right", ["2"], () => {
             //     this.inverse().set(Mat4.look_at(vec3(10, 0, 0), vec3(0, 0, 0), vec3(0, 1, 0)));
             //     this.matrix().set(Mat4.inverse(this.inverse()));
@@ -196,12 +205,13 @@ export class Movement_Controls_2 extends Scene {
                     plus: [this.accumulatedMouseX, this.accumulatedMouseY],
                     minus: [this.accumulatedMouseX, this.accumulatedMouseY]
                 };
-            }else{
-                offsets_from_dead_box = {
-                    plus: [this.mouse.from_center[0] + leeway, this.mouse.from_center[1] + leeway],
-                    minus: [this.mouse.from_center[0] - leeway, this.mouse.from_center[1] - leeway]
-                };
             }
+            // }else{
+            //     offsets_from_dead_box = {
+            //         plus: [this.mouse.from_center[0] + leeway, this.mouse.from_center[1] + leeway],
+            //         minus: [this.mouse.from_center[0] - leeway, this.mouse.from_center[1] - leeway]
+            //     };
+            // }
 
             
             // Apply a camera rotation movement, but only when the mouse is
@@ -300,7 +310,19 @@ export class Movement_Controls_2 extends Scene {
             for (let i = 0; i < this.walls.length; i++) {
                 const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
 
-                const wall = this.walls[i];
+                let wall = this.walls[i];
+
+                if(i == 3){
+                    if (this.door1){
+                        wall = Mat4.translation(0, 1, 0).times(Mat4.identity());
+                    }else{
+                        wall = Mat4.translation(2, 1, 0).times(Mat4.identity());
+                    }
+                }
+
+                //const index = walls.indexOf(searchWall); // Returns the index of the first occurrence
+                //const exists = walls.includes(searchWall); // Returns true if the element exists in the array
+                
 
                 const minExtent = wall.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
                 const maxExtent = wall.times(vec4(1, 1, 1, 1.0)).to3();
@@ -358,11 +380,11 @@ export class Movement_Controls_2 extends Scene {
                 this.mouse_enabled_canvases.add(context.canvas)
             }
 
-            console.log("mouse");
-            console.log(this.mouse.from_center);
-            console.log("mouse move in display");
-            console.log(this.accumulatedMouseX);
-            console.log(this.accumulatedMouseY);
+            // console.log("mouse");
+            // console.log(this.mouse.from_center);
+            // console.log("mouse move in display");
+            // console.log(this.accumulatedMouseX);
+            // console.log(this.accumulatedMouseY);
             // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
             //const movement_vector = this.first_person_flyaround(dt * r, dt * m);
             this.first_person_flyaround(dt * r, dt * m);
@@ -394,19 +416,8 @@ export class Movement_Controls_2 extends Scene {
             // context.canvas.requestPointerLock();
             //console.log("first " + this.first);
             if (this.fps_look){
-                if (this.first){
-                    this.recenterMouse(context);  
-                    this.first = false;
-                    console.log("first");
-                }
-                if (!this.first){
-                    this.recenterMouse(context);    
-                }
-                
-                // Call recenterMouse() to initiate the process
-                if  (Math.abs(this.accumulatedMouseX) > 0){
-                                
-                }                
+                this.recenterMouse(context);    
+                         
             }
 
 

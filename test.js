@@ -1,3 +1,6 @@
+/***********This file is moved to castle-of-shadows.js */
+
+
 import { Simulation } from './examples/control-demo.js';
 import {defs, tiny} from './examples/common.js';
 import {Body, Test_Data} from "./examples/collisions-demo.js";

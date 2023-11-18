@@ -322,12 +322,6 @@ export class Castle_of_shadows extends Simulation {
         //this.light_position = Mat4.translation(0,0,0).times(planet_position);
         //this.shapes.cube.draw(context, program_state, Mat4.translation(0,0,1).times(planet_position), shadow_pass? this.floor : this.pure);
 
-        
-        this.shapes.sphere.draw(context, program_state, model_trans_ball_0, shadow_pass? this.floor : this.pure);
-        // this.shapes.sphere.draw(context, program_state, model_trans_ball_1, shadow_pass? this.floor : this.pure);
-        // this.shapes.sphere.draw(context, program_state, model_trans_ball_2, shadow_pass? this.floor : this.pure);
-        // this.shapes.sphere.draw(context, program_state, model_trans_ball_3, shadow_pass? this.floor : this.pure);
-        // this.shapes.sphere.draw(context, program_state, model_trans_ball_4, shadow_pass? this.floor : this.pure);
 
         this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
         this.shapes.teapot.draw(context, program_state, model_trans_ball_2, shadow_pass? this.stars : this.pure);
@@ -342,21 +336,21 @@ export class Castle_of_shadows extends Simulation {
         this.agent_body = new Body(this.agent.draw(context, program_state, agent_trans, shadow_pass? this.mon : this.pure));
 
     
-        if (this.attached){
-            if (this.attached() != null){
-                //console.log(this.attached());
-                //program_state.set_camera(this.attached().times(Mat4.translation(0,0,5)));     
-                const planet_position = this.attached().times(vec4(0, 0, 0, 1)).to3(); // Get the position of the attached planet
-                const eye = planet_position.plus(vec3(0, 5, 9)); // Set the camera position relative to the planet
-                const target = planet_position; // Set the camera target to the planet's position
+        // if (this.attached){
+        //     if (this.attached() != null){
+        //         //console.log(this.attached());
+        //         //program_state.set_camera(this.attached().times(Mat4.translation(0,0,5)));     
+        //         const planet_position = this.attached().times(vec4(0, 0, 0, 1)).to3(); // Get the position of the attached planet
+        //         const eye = planet_position.plus(vec3(0, 5, 9)); // Set the camera position relative to the planet
+        //         const target = planet_position; // Set the camera target to the planet's position
         
-                let desired =  Mat4.look_at(eye, target, vec3(0, 1, 0))
+        //         let desired =  Mat4.look_at(eye, target, vec3(0, 1, 0))
 
-                let blending_factor = 1.0;
+        //         let blending_factor = 1.0;
 
-                program_state.camera_inverse = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor));
-            }
-        }
+        //         program_state.camera_inverse = desired.map((x,i) => Vector.from(program_state.camera_inverse[i]).mix(x, blending_factor));
+        //     }
+        // }
  
         // For walking animation
         if (this.moving){
@@ -372,7 +366,7 @@ export class Castle_of_shadows extends Simulation {
         this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
         
         let model_transform = Mat4.identity();
-        this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
+        // this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
         this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
     }
 
