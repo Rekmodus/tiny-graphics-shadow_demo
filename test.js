@@ -307,6 +307,7 @@ export class Team_project extends Simulation {
         }
 
         let model_trans_floor = Mat4.translation(0, 0, 0).times(Mat4.scale(8, 0.1, 5));
+        let model_trans_ceil = Mat4.translation(0, 8, 0).times(Mat4.scale(8, 0.1, 5));
         let model_trans_ball_0 = Mat4.translation(0, 1, 0);
         let model_trans_ball_1 = Mat4.translation(5, 0.5, 0);
         let model_trans_ball_2 = Mat4.translation(-5, 1.8, 0).times(Mat4.scale(0.5, 0.5, 0.5));
@@ -319,6 +320,7 @@ export class Team_project extends Simulation {
       
 
         this.shapes.floor.draw(context, program_state, model_trans_floor, shadow_pass? this.floor : this.pure);
+        this.shapes.floor.draw(context, program_state, model_trans_ceil, shadow_pass? this.floor : this.pure);
 
         this.shapes.cube.draw(context, program_state, model_trans_wall_1, shadow_pass? this.Wall : this.pure);
         this.shapes.cube.draw(context, program_state, model_trans_wall_2, shadow_pass? this.floor : this.pure);
@@ -656,7 +658,7 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
             let accumulatedMouseY = 0;
             this.first = true;     
 
-            this.y_axis_rotation_matrix = Mat4.identity();
+            //this.y_axis_rotation_matrix = Mat4.identity();
         }
 
         // Function to recenter the mouse
@@ -828,18 +830,29 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
 
                 const o = offsets_from_dead_box;
 
+
+                
                 // Rotation around the local x-axis (up and down)
                 const up_down_velocity = ((o.minus[1] > 0 && o.minus[1]) || (o.plus[1] < 0 && o.plus[1])) * radians_per_frame;
                 this.matrix().post_multiply(Mat4.rotation(-up_down_velocity, 1, 0, 0));
                 this.inverse().pre_multiply(Mat4.rotation(+up_down_velocity, 1, 0, 0));
+
+                const worldUp = this.inverse().times(vec4(0, 1, 0, 0)).to3().normalized();
+                if(worldUp[1]<0.5){
+                    //console.log("too far");
+                                 // Rotation around the local x-axis (up and down)
+                    const up_down_velocity2 = ((o.minus[1] > 0 && o.minus[1]) || (o.plus[1] < 0 && o.plus[1])) * radians_per_frame *-1;
+                    this.matrix().post_multiply(Mat4.rotation(-up_down_velocity2, 1, 0, 0));
+                    this.inverse().pre_multiply(Mat4.rotation(+up_down_velocity2, 1, 0, 0));
+                }
     
                 // Rotation around an arbitrary axis (e.g., the world up vector)
                 const left_right_velocity = ((o.minus[0] > 0 && o.minus[0]) || (o.plus[0] < 0 && o.plus[0])) * radians_per_frame;
     
-                // Use Rodrigues' rotation formula to rotate around the world up vector
-                const rotation_axis = this.inverse().times(vec4(0, 1, 0, 0)).to3().normalized();
-                const rotation_matrix = Mat4.rotation(-left_right_velocity, ...rotation_axis);
-                const rotation_matrix2 = Mat4.rotation(left_right_velocity, ...rotation_axis);
+                // rotate around the world up vector
+                //const rotation_axis = this.inverse().times(vec4(0, 1, 0, 0)).to3().normalized();
+                const rotation_matrix = Mat4.rotation(-left_right_velocity, ...worldUp);
+                const rotation_matrix2 = Mat4.rotation(left_right_velocity, ...worldUp);
     
                 this.matrix().post_multiply(rotation_matrix);
                 this.inverse().pre_multiply(rotation_matrix2);
