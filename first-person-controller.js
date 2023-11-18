@@ -52,8 +52,8 @@ export class Movement_Controls_2 extends Scene {
             this.accumulatedMouseX = 0;
             this.accumulatedMouseY = 0;
 
-            this.first = true;     // initialize the center of mouse
-            this.accumulatedUpDownRotation = 0;
+            //this.first = true;     // initialize the center of mouse
+            //this.accumulatedUpDownRotation = 0;
             //this.y_axis_rotation_matrix = Mat4.identity();
         }
 
