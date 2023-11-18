@@ -9,6 +9,7 @@ const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivisio
 import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
+import { walls } from './Walls.js';
 
 export class Movement_Controls_2 extends Scene {
         // **Movement_Controls** is a Scene that can be attached to a canvas, like any other
@@ -29,23 +30,23 @@ export class Movement_Controls_2 extends Scene {
             this.mouse_enabled_canvases = new Set();
             this.will_take_over_graphics_state = true;
 
-            this.walls = [];
-            let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5)).times(Mat4.identity());
-            let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8)).times(Mat4.identity());
-            let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33)).times(Mat4.identity());
-            let model_trans_wall_4 = Mat4.translation(0, 1, 0).times(Mat4.identity());
+            // this.walls = [];
+            // let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5)).times(Mat4.identity());
+            // let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8)).times(Mat4.identity());
+            // let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33)).times(Mat4.identity());
+            // let model_trans_wall_4 = Mat4.translation(0, 1, 0).times(Mat4.identity());
           
-            this.walls.push(model_trans_wall_1);
-            this.walls.push(model_trans_wall_2);
-            this.walls.push(model_trans_wall_3);
-            this.walls.push(model_trans_wall_4);
+            // this.walls.push(model_trans_wall_1);
+            // this.walls.push(model_trans_wall_2);
+            // this.walls.push(model_trans_wall_3);
+            // this.walls.push(model_trans_wall_4);
             this.door1 = true
-
-            if (this.walls.includes(model_trans_wall_3)){
-                console.log("wall 3 exists");
-            }else{
-                console.log("no wall");
-            }
+            // We can identify a wall using walls.includes. We could save more data for the walls if we want
+            // if (this.walls.includes(model_trans_wall_3)){
+            //     console.log("wall 3 exists");
+            // }else{
+            //     console.log("no wall");
+            // }
             
 
             // Initialize variables to track accumulated mouse movement
@@ -307,10 +308,10 @@ export class Movement_Controls_2 extends Scene {
         check_wall_collisions(w, graphics_state, ){
             const playerSize = vec3(1.5, 1.5, 1.5); // Adjust the size of the player
 
-            for (let i = 0; i < this.walls.length; i++) {
+            for (let i = 0; i < w.length; i++) {
                 const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
 
-                let wall = this.walls[i];
+                let wall = w[i];
 
                 if(i == 3){
                     if (this.door1){
@@ -400,7 +401,7 @@ export class Movement_Controls_2 extends Scene {
             //console.log("cam z?" + this.z_axis);
 
             // Try to move player. If collide then move player back!
-            if (this.check_wall_collisions(this.walls, graphics_state)){
+            if (this.check_wall_collisions(walls, graphics_state)){
                 // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
                 this.first_person_flyaround(0, dt * m * -1);
             }
