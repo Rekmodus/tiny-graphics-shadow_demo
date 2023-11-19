@@ -12,7 +12,7 @@ const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, S
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
 //import {Movement_Controls_2} from './first-person-controller.js' 
-import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader } from './shaders.js';
+//import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader } from './shaders.js';
 
 import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
