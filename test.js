@@ -1,6 +1,8 @@
 import { Simulation } from './examples/control-demo.js';
 import {defs, tiny} from './examples/common.js';
 import {Body, Test_Data} from "./examples/collisions-demo.js";
+import {Item_System, Item} from "./item-system.js";
+
 // Pull these names into this module's scope for convenience:
 const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
@@ -35,7 +37,6 @@ const Square =
 export class Team_project extends Simulation {
     constructor() {
         super();
-
 
 
         //const shader = new defs.Fake_Bump_Map(1);
@@ -164,6 +165,15 @@ export class Team_project extends Simulation {
 
         this.data = new Test_Data();
 
+//Item System
+
+        this.item_sys = new Item_System();
+
+        let model_transform = Mat4.translation(5, 1.5, 0).times(Mat4.rotation(-Math.PI/2, 1, 0, 0));
+
+        this.item_sys.held_item = this.item_sys.create_item(Item.Flashlight, this.shapes.Flashlight, Mat4.identity(), this.flash);
+        this.item_sys.create_item(Item.Debug, this.shapes.cube, Mat4.translation(0, 1, 10), this.wood);
+        this.item_sys.create_item(Item.Debug, this.shapes.teapot, model_transform, this.wood);
     }
 
     random_color() {
@@ -208,8 +218,15 @@ export class Team_project extends Simulation {
             this.new_line();
             this.key_triggered_button("Attach to object", ["1"], () => this.attached = () => this.moon);
 
-        }
+        this.key_triggered_button("Interact", ["e"], this.on_interact, undefined);
 
+    }
+
+    on_interact() {
+        // Called when interact button is pressed
+        this.item_sys.pick_up_item();
+    }
+    
     texture_buffer_init(gl) {
         // Depth Texture
         this.lightDepthTexture = gl.createTexture();
@@ -379,11 +396,13 @@ export class Team_project extends Simulation {
         }
    
         let base_transform = Mat4.identity().times(Mat4.scale(0.5,0.5,0.5).times(Mat4.translation(2.5 + (0.01 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
-        this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
+        //this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
         
         let model_transform = Mat4.identity();
         this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
         this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
+
+        this.item_sys.draw_items(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass);
     }
 
     display(context, program_state) {
@@ -527,10 +546,9 @@ export class Team_project extends Simulation {
             );            
         }
 
-
+        this.item_sys.update_item_in_range(program_state.camera_transform);
     }
 
-    
     update_state(dt) {
         // update_state():  Override the base time-stepping code to say what this particular
         // scene should do to its bodies every frame -- including applying forces.
@@ -1018,8 +1036,6 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
                     this.recenterMouse(context);                
                 }                
             }
-
-
         }
     }
 
