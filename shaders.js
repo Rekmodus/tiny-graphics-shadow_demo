@@ -30,6 +30,8 @@ export class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shad
             uniform float light_texture_size;
             uniform float fog_start;
             uniform float fog_end;
+            uniform float fog_density;
+            uniform vec3 fog_color;
             
 
             float PCF_shadow(vec2 center, float projected_depth) {
@@ -64,8 +66,6 @@ export class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shad
 
 
                 vec3 final_color = gl_FragColor.xyz;
-
-                float fog_density = 0.15;
 
                 // Simulate fog based on distance from the camera:
                 float fog_distance = length(vertex_worldspace - camera_center);
@@ -105,6 +105,7 @@ export class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shad
                     // Modify this threshold as needed
                     float distance_threshold = 0.02;
                     float light_radius = 0.3;
+                    
 
                     // Adjust shadow based on distance from the center
                     float circular_flashlight_attenuation = inRange ? smoothstep(light_radius, light_radius + distance_threshold, distance) : 1.0;
@@ -128,6 +129,76 @@ export class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shad
                 
                 gl_FragColor.xyz += diffuse + specular;
             } `;
+    }
+
+    send_gpu_state(gl, gpu, gpu_state, model_transform) {
+        // send_gpu_state():  Send the state of our whole drawing context to the GPU.
+        const O = vec4(0, 0, 0, 1), camera_center = gpu_state.camera_transform.times(O).to3();
+        gl.uniform3fv(gpu.camera_center, camera_center);
+        // Use the squared scale trick from "Eric's blog" instead of inverse transpose matrix:
+        const squared_scale = model_transform.reduce(
+            (acc, r) => {
+                return acc.plus(vec4(...r).times_pairwise(r))
+            }, vec4(0, 0, 0, 0)).to3();
+        gl.uniform3fv(gpu.squared_scale, squared_scale);
+        // Send the current matrices to the shader.  Go ahead and pre-compute
+        // the products we'll need of the of the three special matrices and just
+        // cache and send those.  They will be the same throughout this draw
+        // call, and thus across each instance of the vertex shader.
+        // Transpose them since the GPU expects matrices as column-major arrays.
+        const PCM = gpu_state.projection_transform.times(gpu_state.view_mat).times(model_transform);
+        gl.uniformMatrix4fv(gpu.model_transform, false, Matrix.flatten_2D_to_1D(model_transform.transposed()));
+        gl.uniformMatrix4fv(gpu.projection_camera_model_transform, false, Matrix.flatten_2D_to_1D(PCM.transposed()));
+        // shadow related
+        gl.uniformMatrix4fv(gpu.light_view_mat, false, Matrix.flatten_2D_to_1D(gpu_state.light_view_mat.transposed()));
+        gl.uniformMatrix4fv(gpu.light_proj_mat, false, Matrix.flatten_2D_to_1D(gpu_state.light_proj_mat.transposed()));
+
+        // Omitting lights will show only the material color, scaled by the ambient term:
+        if (!gpu_state.lights.length)
+            return;
+
+        const light_positions_flattened = [], light_colors_flattened = [];
+        for (let i = 0; i < 4 * gpu_state.lights.length; i++) {
+            light_positions_flattened.push(gpu_state.lights[Math.floor(i / 4)].position[i % 4]);
+            light_colors_flattened.push(gpu_state.lights[Math.floor(i / 4)].color[i % 4]);
+        }
+        gl.uniform4fv(gpu.light_positions_or_vectors, light_positions_flattened);
+        gl.uniform4fv(gpu.light_colors, light_colors_flattened);
+        gl.uniform1fv(gpu.light_attenuation_factors, gpu_state.lights.map(l => l.attenuation));
+    }
+
+    //gl.uniform1f(gpu.diffusivity, material.diffusivity);
+    update_GPU(context, gpu_addresses, gpu_state, model_transform, material) {
+        // update_GPU(): Add a little more to the base class's version of this method.
+        super.update_GPU(context, gpu_addresses, gpu_state, model_transform, material);
+        // Updated for assignment 4
+        context.uniform1f(gpu_addresses.animation_time, gpu_state.animation_time / 1000);
+        context.uniform1f(gpu_addresses.fog_density, material.fog_density || 0.15);
+        context.uniform1f(gpu_addresses.fog_color, material.fog_color || vec3(0, 0, 0)); // Adjust the fog color; // Adjust the fog color, material.fog_density || 0.15);
+        if (material.color_texture && material.color_texture.ready) {
+            // Select texture unit 0 for the fragment shader Sampler2D uniform called "texture":
+            context.uniform1i(gpu_addresses.color_texture, 0); // 0 for color texture
+            // For this draw, use the texture image from correct the GPU buffer:
+            context.activeTexture(context["TEXTURE" + 0]);
+            material.color_texture.activate(context);
+            context.uniform1i(gpu_addresses.use_texture, 1);
+        }
+        else {
+            context.uniform1i(gpu_addresses.use_texture, 0);
+        }
+        if (gpu_state.draw_shadow) {
+            context.uniform1i(gpu_addresses.draw_shadow, 1);
+            context.uniform1f(gpu_addresses.light_depth_bias, 0.003);
+            context.uniform1f(gpu_addresses.light_texture_size, LIGHT_DEPTH_TEX_SIZE);
+            context.uniform1i(gpu_addresses.light_depth_texture, 1); // 1 for light-view depth texture}
+            if (material.light_depth_texture && material.light_depth_texture.ready) {
+                context.activeTexture(context["TEXTURE" + 1]);
+                material.light_depth_texture.activate(context, 1);
+            }
+        }
+        else {
+            context.uniform1i(gpu_addresses.draw_shadow, 0);
+        }
     }
 }
 

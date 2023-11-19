@@ -115,7 +115,7 @@ export class Castle_of_shadows extends Simulation {
             color: color(.1, .1, .1, 1),
             ambient: 0.5, diffusivity: 1, specularity: 1,
             color_texture: new Texture("assets/grid.png"),
-            light_depth_texture: null
+            light_depth_texture: null,
         })
 
         this.Wall = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
@@ -124,6 +124,7 @@ export class Castle_of_shadows extends Simulation {
             color_texture: new Texture("assets/Wall.png"),
             light_depth_texture: null
         })
+
 
         // For the first pass
         this.pure = new Material(new Color_Phong_Shader(), {
