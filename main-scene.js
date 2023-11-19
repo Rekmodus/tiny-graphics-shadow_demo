@@ -48,7 +48,7 @@ Object.assign(defs,
 
 // (Can define Main_Scene's class here)
 
- const Main_Scene = Team_project;
+ const Main_Scene = Castle_of_shadows;
 //const Main_Scene = Mouse_Demo;
 //const Main_Scene = Shadow_Demo;
 const Additional_Scenes = [];

@@ -1,17 +1,19 @@
 import { Simulation } from './examples/control-demo.js';
 import {defs, tiny} from './examples/common.js';
 import {Body, Test_Data} from "./examples/collisions-demo.js";
+import {Item_System, Item} from "./item-system.js";
+import {Movement_Controls_2} from './first-person-controller.js' 
+import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader } from './shaders.js';
+import {Shape_From_File} from './examples/obj-file-demo.js'
+import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
+    Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
+
 // Pull these names into this module's scope for convenience:
 const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
-import {Movement_Controls_2} from './first-person-controller.js' 
-import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader } from './shaders.js';
 
-import {Shape_From_File} from './examples/obj-file-demo.js'
-import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
-    Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
 
 // 2D shape, to display the texture buffer
 const Square =
@@ -157,6 +159,16 @@ export class Castle_of_shadows extends Simulation {
 
         this.data = new Test_Data();
 
+//Item System
+
+        this.item_sys = new Item_System();
+
+        let model_transform = Mat4.translation(5, 1.5, 0).times(Mat4.rotation(-Math.PI/2, 1, 0, 0));
+
+        this.item_sys.held_item = this.item_sys.create_item(Item.Flashlight, this.shapes.Flashlight, Mat4.identity(), this.flash);
+        this.item_sys.create_item(Item.Debug, this.shapes.cube, Mat4.translation(0, 1, 10), this.wood);
+        this.item_sys.create_item(Item.Debug, this.shapes.teapot, model_transform, this.wood);
+
     }
 
 
@@ -198,7 +210,14 @@ export class Castle_of_shadows extends Simulation {
             this.new_line();
             this.key_triggered_button("Attach to object", ["1"], () => this.attached = () => this.moon);
 
-        }light_depth_texture
+        this.key_triggered_button("Interact", ["e"], this.on_interact, undefined);
+
+    }
+
+    on_interact() {
+        // Called when interact button is pressed
+        this.item_sys.pick_up_item();
+    }
 
     texture_buffer_init(gl) {
         // Depth Texture
@@ -363,11 +382,14 @@ export class Castle_of_shadows extends Simulation {
         }
    
         let base_transform = Mat4.identity().times(Mat4.scale(0.2,0.2,0.2).times(Mat4.translation(2.5 + (0.01 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
-        this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
+        //this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
         
-        // let model_transform = Mat4.identity();
-        // this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
+        let model_transform = Mat4.identity();
+        this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
         this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
+    
+    
+        this.item_sys.draw_items(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass);
     }
 
     display(context, program_state) {
@@ -485,9 +507,9 @@ export class Castle_of_shadows extends Simulation {
             );            
         }
 
+        this.item_sys.update_item_in_range(program_state.camera_transform);
     }
 
-    
     update_state(dt) {
         // update_state():  Override the base time-stepping code to say what this particular
         // scene should do to its bodies every frame -- including applying forces.
