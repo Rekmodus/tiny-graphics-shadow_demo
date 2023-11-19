@@ -4,6 +4,8 @@
 import { Simulation } from './examples/control-demo.js';
 import {defs, tiny} from './examples/common.js';
 import {Body, Test_Data} from "./examples/collisions-demo.js";
+import {Item_System, Item} from "./item-system.js";
+
 // Pull these names into this module's scope for convenience:
 const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
@@ -41,7 +43,6 @@ const Square =
 export class Team_project extends Simulation {
     constructor() {
         super();
-
 
 
         //const shader = new defs.Fake_Bump_Map(1);
@@ -170,6 +171,15 @@ export class Team_project extends Simulation {
 
         this.data = new Test_Data();
 
+//Item System
+
+        this.item_sys = new Item_System();
+
+        let model_transform = Mat4.translation(5, 1.5, 0).times(Mat4.rotation(-Math.PI/2, 1, 0, 0));
+
+        this.item_sys.held_item = this.item_sys.create_item(Item.Flashlight, this.shapes.Flashlight, Mat4.identity(), this.flash);
+        this.item_sys.create_item(Item.Debug, this.shapes.cube, Mat4.translation(0, 1, 10), this.wood);
+        this.item_sys.create_item(Item.Debug, this.shapes.teapot, model_transform, this.wood);
     }
 
     random_color() {
@@ -214,7 +224,15 @@ export class Team_project extends Simulation {
             this.new_line();
             this.key_triggered_button("Attach to object", ["1"], () => this.attached = () => this.moon);
 
-        }light_depth_texture
+        this.key_triggered_button("Interact", ["e"], this.on_interact, undefined);
+
+    }
+
+    on_interact() {
+        // Called when interact button is pressed
+        this.item_sys.pick_up_item();
+    }
+    
 
     texture_buffer_init(gl) {
         // Depth Texture
@@ -385,11 +403,13 @@ export class Team_project extends Simulation {
         }
    
         let base_transform = Mat4.identity().times(Mat4.scale(0.5,0.5,0.5).times(Mat4.translation(2.5 + (0.01 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
-        this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
+        //this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
         
         let model_transform = Mat4.identity();
         this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
         this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
+
+        this.item_sys.draw_items(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass);
     }
 
     display(context, program_state) {
@@ -533,10 +553,9 @@ export class Team_project extends Simulation {
             );            
         }
 
-
+        this.item_sys.update_item_in_range(program_state.camera_transform);
     }
 
-    
     update_state(dt) {
         // update_state():  Override the base time-stepping code to say what this particular
         // scene should do to its bodies every frame -- including applying forces.
@@ -1029,247 +1048,245 @@ const Movement_Controls_2 = defs.Movement_Controls_2 =
                     this.recenterMouse(context);                
                 }                
             }
-
-
         }
     }
 
     
     
-// class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
-//     fragment_glsl_code() {
-//         // ********* FRAGMENT SHADER *********
-//         // A fragment is a pixel that's overlapped by the current triangle.
-//         // Fragments affect the final image or get discarded due to depth.
-//         return this.shared_glsl_code() + `
-//             varying vec2 f_tex_coord;
-//             uniform sampler2D texture;
-//             uniform sampler2D light_depth_texture;
-//             uniform mat4 light_view_mat;
-//             uniform mat4 light_proj_mat;
-//             uniform float animation_time;
-//             uniform float light_depth_bias;
-//             uniform bool use_texture;
-//             uniform bool draw_shadow;
-//             uniform float light_texture_size;
-//             uniform float fog_start;
-//             uniform float fog_end;
+class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shader {
+    fragment_glsl_code() {
+        // ********* FRAGMENT SHADER *********
+        // A fragment is a pixel that's overlapped by the current triangle.
+        // Fragments affect the final image or get discarded due to depth.
+        return this.shared_glsl_code() + `
+            varying vec2 f_tex_coord;
+            uniform sampler2D texture;
+            uniform sampler2D light_depth_texture;
+            uniform mat4 light_view_mat;
+            uniform mat4 light_proj_mat;
+            uniform float animation_time;
+            uniform float light_depth_bias;
+            uniform bool use_texture;
+            uniform bool draw_shadow;
+            uniform float light_texture_size;
+            uniform float fog_start;
+            uniform float fog_end;
             
 
-//             float PCF_shadow(vec2 center, float projected_depth) {
-//                 float shadow = 0.0;
-//                 float texel_size = 1.0 / light_texture_size;
-//                 for(int x = -1; x <= 1; ++x)
-//                 {
-//                     for(int y = -1; y <= 1; ++y)
-//                     {
-//                         float light_depth_value = texture2D(light_depth_texture, center + vec2(x, y) * texel_size).r; 
-//                         shadow += projected_depth >= light_depth_value + light_depth_bias ? 1.0 : 0.0;        
-//                     }    
-//                 }
-//                 shadow /= 9.0;
-//                 return shadow;
-//             }
+            float PCF_shadow(vec2 center, float projected_depth) {
+                float shadow = 0.0;
+                float texel_size = 1.0 / light_texture_size;
+                for(int x = -1; x <= 1; ++x)
+                {
+                    for(int y = -1; y <= 1; ++y)
+                    {
+                        float light_depth_value = texture2D(light_depth_texture, center + vec2(x, y) * texel_size).r; 
+                        shadow += projected_depth >= light_depth_value + light_depth_bias ? 1.0 : 0.0;        
+                    }    
+                }
+                shadow /= 9.0;
+                return shadow;
+            }
             
-//             void main(){
-//                 // Sample the texture image in the correct place:
-//                 vec4 tex_color = texture2D( texture, f_tex_coord );
-//                 if (!use_texture)
-//                     tex_color = vec4(0, 0, 0, 1);
-//                 if( tex_color.w < .01 ) discard;
+            void main(){
+                // Sample the texture image in the correct place:
+                vec4 tex_color = texture2D( texture, f_tex_coord );
+                if (!use_texture)
+                    tex_color = vec4(0, 0, 0, 1);
+                if( tex_color.w < .01 ) discard;
                 
-//                 // Compute an initial (ambient) color:
-//                 gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                // Compute an initial (ambient) color:
+                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
                 
-//                 // Compute the final color with contributions from lights:
-//                 vec3 diffuse, specular;
-//                 vec3 other_than_ambient = phong_model_lights( normalize( N ), vertex_worldspace, diffuse, specular );
+                // Compute the final color with contributions from lights:
+                vec3 diffuse, specular;
+                vec3 other_than_ambient = phong_model_lights( normalize( N ), vertex_worldspace, diffuse, specular );
                 
 
 
-//                 vec3 final_color = gl_FragColor.xyz;
+                vec3 final_color = gl_FragColor.xyz;
 
-//                 float fog_density = 0.15;
+                float fog_density = 0.15;
 
-//                 // Simulate fog based on distance from the camera:
-//                 float fog_distance = length(vertex_worldspace - camera_center);
+                // Simulate fog based on distance from the camera:
+                float fog_distance = length(vertex_worldspace - camera_center);
 
-//                 float fog_factor = clamp((fog_distance - 5.0) / (40.0 - 5.0), 0.0, 1.0);
+                float fog_factor = clamp((fog_distance - 5.0) / (40.0 - 5.0), 0.0, 1.0);
 
-//                 // Use an exponential function for fog density
-//                 fog_factor = 1.0 - exp(-fog_density * fog_distance);
+                // Use an exponential function for fog density
+                fog_factor = 1.0 - exp(-fog_density * fog_distance);
             
-//                 fog_factor = clamp(fog_factor, 0.0, 1.0);
-//                 vec3 fog_color = vec3(0, 0, 0); // Adjust the fog color
-//                 gl_FragColor.xyz = mix(final_color, fog_color, fog_factor);
+                fog_factor = clamp(fog_factor, 0.0, 1.0);
+                vec3 fog_color = vec3(0, 0, 0); // Adjust the fog color
+                gl_FragColor.xyz = mix(final_color, fog_color, fog_factor);
 
 
-//                 // Deal with shadow:
-//                 if (draw_shadow) {
-//                     vec4 light_tex_coord = (light_proj_mat * light_view_mat * vec4(vertex_worldspace, 1.0));
-//                     // convert NDCS from light's POV to light depth texture coordinates
-//                     light_tex_coord.xyz /= light_tex_coord.w; 
-//                     light_tex_coord.xyz *= 0.5;
-//                     light_tex_coord.xyz += 0.5;
-//                     float light_depth_value = texture2D( light_depth_texture, light_tex_coord.xy ).r;
-//                     float projected_depth = light_tex_coord.z;
+                // Deal with shadow:
+                if (draw_shadow) {
+                    vec4 light_tex_coord = (light_proj_mat * light_view_mat * vec4(vertex_worldspace, 1.0));
+                    // convert NDCS from light's POV to light depth texture coordinates
+                    light_tex_coord.xyz /= light_tex_coord.w; 
+                    light_tex_coord.xyz *= 0.5;
+                    light_tex_coord.xyz += 0.5;
+                    float light_depth_value = texture2D( light_depth_texture, light_tex_coord.xy ).r;
+                    float projected_depth = light_tex_coord.z;
                     
-//                     bool inRange =
-//                         light_tex_coord.x >= 0.0 &&
-//                         light_tex_coord.x <= 1.0 &&
-//                         light_tex_coord.y >= 0.0 &&
-//                         light_tex_coord.y <= 1.0;
+                    bool inRange =
+                        light_tex_coord.x >= 0.0 &&
+                        light_tex_coord.x <= 1.0 &&
+                        light_tex_coord.y >= 0.0 &&
+                        light_tex_coord.y <= 1.0;
 
-//                     // Calculate distance from the center of the circular flashlight in screen space
-//                     // Slight hard coded animation wobble.. might remove it
-//                     vec2 light_screen_center = vec2(0.5 + 0.01*sin(animation_time * 0.009), 0.5 + 0.1*sin(animation_time * 0.009)); // Hardcoded value for testing
-//                     vec2 distance_from_center = abs(light_tex_coord.xy - light_screen_center);
-//                     float distance = length(distance_from_center);
+                    // Calculate distance from the center of the circular flashlight in screen space
+                    // Slight hard coded animation wobble.. might remove it
+                    vec2 light_screen_center = vec2(0.5 + 0.01*sin(animation_time * 0.009), 0.5 + 0.1*sin(animation_time * 0.009)); // Hardcoded value for testing
+                    vec2 distance_from_center = abs(light_tex_coord.xy - light_screen_center);
+                    float distance = length(distance_from_center);
 
-//                     // Modify this threshold as needed
-//                     float distance_threshold = 0.02;
-//                     float light_radius = 0.3;
+                    // Modify this threshold as needed
+                    float distance_threshold = 0.02;
+                    float light_radius = 0.3;
 
-//                     // Adjust shadow based on distance from the center
-//                     float circular_flashlight_attenuation = inRange ? smoothstep(light_radius, light_radius + distance_threshold, distance) : 1.0;
+                    // Adjust shadow based on distance from the center
+                    float circular_flashlight_attenuation = inRange ? smoothstep(light_radius, light_radius + distance_threshold, distance) : 1.0;
                 
-//                     float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
+                    float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
                 
-//                     // Combine old shadows and circular flashlight effect
-//                     float combined_shadow = max(shadowness, circular_flashlight_attenuation);
+                    // Combine old shadows and circular flashlight effect
+                    float combined_shadow = max(shadowness, circular_flashlight_attenuation);
                 
-//                     diffuse *= 0.2 + 0.8 * (1.0 - combined_shadow);
-//                     specular *= 1.0 - combined_shadow;
+                    diffuse *= 0.2 + 0.8 * (1.0 - combined_shadow);
+                    specular *= 1.0 - combined_shadow;
 
-//                     ///////      
-//                     // float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
+                    ///////      
+                    // float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
                     
-//                     // if (inRange && shadowness > 0.3) {
-//                     //     diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
-//                     //     specular *= 1.0 - shadowness;
-//                     // }
-//                 }
+                    // if (inRange && shadowness > 0.3) {
+                    //     diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
+                    //     specular *= 1.0 - shadowness;
+                    // }
+                }
                 
-//                 gl_FragColor.xyz += diffuse + specular;
-//             } `;
-//     }
-// }
+                gl_FragColor.xyz += diffuse + specular;
+            } `;
+    }
+}
 
-// class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Phong_Shader {
+class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Phong_Shader {
 
-//     fragment_glsl_code() {
-//         // ********* FRAGMENT SHADER *********
-//         // A fragment is a pixel that's overlapped by the current triangle.
-//         // Fragments affect the final image or get discarded due to depth.
-//         return this.shared_glsl_code() + `
-//             varying vec2 f_tex_coord;
-//             uniform sampler2D texture;
-//             uniform sampler2D light_depth_texture;
-//             uniform mat4 light_view_mat;
-//             uniform mat4 light_proj_mat;
-//             uniform float animation_time;
-//             uniform float light_depth_bias;
-//             uniform bool use_texture;
-//             uniform bool draw_shadow;
-//             uniform float light_texture_size;
+    fragment_glsl_code() {
+        // ********* FRAGMENT SHADER *********
+        // A fragment is a pixel that's overlapped by the current triangle.
+        // Fragments affect the final image or get discarded due to depth.
+        return this.shared_glsl_code() + `
+            varying vec2 f_tex_coord;
+            uniform sampler2D texture;
+            uniform sampler2D light_depth_texture;
+            uniform mat4 light_view_mat;
+            uniform mat4 light_proj_mat;
+            uniform float animation_time;
+            uniform float light_depth_bias;
+            uniform bool use_texture;
+            uniform bool draw_shadow;
+            uniform float light_texture_size;
             
-//             float PCF_shadow(vec2 center, float projected_depth) {
-//                 float shadow = 0.0;
-//                 float texel_size = 1.0 / light_texture_size;
-//                 for(int x = -1; x <= 1; ++x)
-//                 {
-//                     for(int y = -1; y <= 1; ++y)
-//                     {
-//                         float light_depth_value = texture2D(light_depth_texture, center + vec2(x, y) * texel_size).r; 
-//                         shadow += projected_depth >= light_depth_value + light_depth_bias ? 1.0 : 0.0;        
-//                     }    
-//                 }
-//                 shadow /= 9.0;
-//                 return shadow;
-//             }
+            float PCF_shadow(vec2 center, float projected_depth) {
+                float shadow = 0.0;
+                float texel_size = 1.0 / light_texture_size;
+                for(int x = -1; x <= 1; ++x)
+                {
+                    for(int y = -1; y <= 1; ++y)
+                    {
+                        float light_depth_value = texture2D(light_depth_texture, center + vec2(x, y) * texel_size).r; 
+                        shadow += projected_depth >= light_depth_value + light_depth_bias ? 1.0 : 0.0;        
+                    }    
+                }
+                shadow /= 9.0;
+                return shadow;
+            }
             
-//             void main(){
-//                 // Sample the texture image in the correct place:
-//                 vec2 f_tex_2 = f_tex_coord;
-//                 vec2 f_tex_3 = vec2(f_tex_2.s - 2.0 * animation_time, f_tex_2.t);
+            void main(){
+                // Sample the texture image in the correct place:
+                vec2 f_tex_2 = f_tex_coord;
+                vec2 f_tex_3 = vec2(f_tex_2.s - 2.0 * animation_time, f_tex_2.t);
 
-//                 vec4 tex_color = texture2D( texture, f_tex_3 );
-//                 if (!use_texture)
-//                     tex_color = vec4(0, 0, 0, 1);
-//                 if( tex_color.w < .01 ) discard;
+                vec4 tex_color = texture2D( texture, f_tex_3 );
+                if (!use_texture)
+                    tex_color = vec4(0, 0, 0, 1);
+                if( tex_color.w < .01 ) discard;
                 
-//                 // Compute an initial (ambient) color:
-//                 gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
+                // Compute an initial (ambient) color:
+                gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
                 
-//                 // Compute the final color with contributions from lights:
-//                 vec3 diffuse, specular;
-//                 vec3 other_than_ambient = phong_model_lights( normalize( N ), vertex_worldspace, diffuse, specular );
+                // Compute the final color with contributions from lights:
+                vec3 diffuse, specular;
+                vec3 other_than_ambient = phong_model_lights( normalize( N ), vertex_worldspace, diffuse, specular );
                 
-//                 vec3 final_color = gl_FragColor.xyz;
+                vec3 final_color = gl_FragColor.xyz;
 
-//                 float fog_density = 0.15;
+                float fog_density = 0.15;
 
-//                 // Simulate fog based on distance from the camera:
-//                 float fog_distance = length(vertex_worldspace - camera_center);
+                // Simulate fog based on distance from the camera:
+                float fog_distance = length(vertex_worldspace - camera_center);
 
-//                 float fog_factor = clamp((fog_distance - 10.0) / (40.0 - 10.0), 0.0, 1.0);
+                float fog_factor = clamp((fog_distance - 10.0) / (40.0 - 10.0), 0.0, 1.0);
 
-//                 // Use an exponential function for fog density
-//                 fog_factor = 1.0 - exp(-fog_density * fog_distance);
+                // Use an exponential function for fog density
+                fog_factor = 1.0 - exp(-fog_density * fog_distance);
             
-//                 fog_factor = clamp(fog_factor, 0.0, 1.0);
-//                 vec3 fog_color = vec3(0, 0, 0); // Adjust the fog color
-//                 gl_FragColor.xyz = mix(final_color, fog_color, fog_factor);
+                fog_factor = clamp(fog_factor, 0.0, 1.0);
+                vec3 fog_color = vec3(0, 0, 0); // Adjust the fog color
+                gl_FragColor.xyz = mix(final_color, fog_color, fog_factor);
                 
-//                 // Deal with shadow:
-//                 if (draw_shadow) {
-//                     vec4 light_tex_coord = (light_proj_mat * light_view_mat * vec4(vertex_worldspace, 1.0));
-//                     // convert NDCS from light's POV to light depth texture coordinates
-//                     light_tex_coord.xyz /= light_tex_coord.w; 
-//                     light_tex_coord.xyz *= 0.5;
-//                     light_tex_coord.xyz += 0.5;
-//                     float light_depth_value = texture2D( light_depth_texture, light_tex_coord.xy ).r;
-//                     float projected_depth = light_tex_coord.z;
+                // Deal with shadow:
+                if (draw_shadow) {
+                    vec4 light_tex_coord = (light_proj_mat * light_view_mat * vec4(vertex_worldspace, 1.0));
+                    // convert NDCS from light's POV to light depth texture coordinates
+                    light_tex_coord.xyz /= light_tex_coord.w; 
+                    light_tex_coord.xyz *= 0.5;
+                    light_tex_coord.xyz += 0.5;
+                    float light_depth_value = texture2D( light_depth_texture, light_tex_coord.xy ).r;
+                    float projected_depth = light_tex_coord.z;
                     
-//                     bool inRange =
-//                         light_tex_coord.x >= 0.0 &&
-//                         light_tex_coord.x <= 1.0 &&
-//                         light_tex_coord.y >= 0.0 &&
-//                         light_tex_coord.y <= 1.0;
+                    bool inRange =
+                        light_tex_coord.x >= 0.0 &&
+                        light_tex_coord.x <= 1.0 &&
+                        light_tex_coord.y >= 0.0 &&
+                        light_tex_coord.y <= 1.0;
 
-//                     // Calculate distance from the center of the circular flashlight in screen space
-//                     // Slight hard coded animation wobble.. might remove it
-//                     vec2 light_screen_center = vec2(0.5 + 0.01*sin(animation_time * 0.009), 0.5 + 0.1*sin(animation_time * 0.009)); // Hardcoded value for testing
-//                     vec2 distance_from_center = abs(light_tex_coord.xy - light_screen_center);
-//                     float distance = length(distance_from_center);
+                    // Calculate distance from the center of the circular flashlight in screen space
+                    // Slight hard coded animation wobble.. might remove it
+                    vec2 light_screen_center = vec2(0.5 + 0.01*sin(animation_time * 0.009), 0.5 + 0.1*sin(animation_time * 0.009)); // Hardcoded value for testing
+                    vec2 distance_from_center = abs(light_tex_coord.xy - light_screen_center);
+                    float distance = length(distance_from_center);
 
-//                     // Modify this threshold as needed
-//                     float distance_threshold = 0.02;
-//                     float light_radius = 0.3;
+                    // Modify this threshold as needed
+                    float distance_threshold = 0.02;
+                    float light_radius = 0.3;
 
-//                     // Adjust shadow based on distance from the center
-//                     float circular_flashlight_attenuation = inRange ? smoothstep(light_radius, light_radius + distance_threshold, distance) : 1.0;
+                    // Adjust shadow based on distance from the center
+                    float circular_flashlight_attenuation = inRange ? smoothstep(light_radius, light_radius + distance_threshold, distance) : 1.0;
                 
-//                     float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
+                    float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
                 
-//                     // Combine old shadows and circular flashlight effect
-//                     float combined_shadow = max(shadowness, circular_flashlight_attenuation);
+                    // Combine old shadows and circular flashlight effect
+                    float combined_shadow = max(shadowness, circular_flashlight_attenuation);
                 
-//                     diffuse *= 0.2 + 0.8 * (1.0 - combined_shadow);
-//                     specular *= 1.0 - combined_shadow;
+                    diffuse *= 0.2 + 0.8 * (1.0 - combined_shadow);
+                    specular *= 1.0 - combined_shadow;
                           
-//                     // float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
+                    // float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
                     
-//                     // if (inRange && shadowness > 0.3) {
-//                     //     diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
-//                     //     specular *= 1.0 - shadowness;
-//                     // }
-//                 }
+                    // if (inRange && shadowness > 0.3) {
+                    //     diffuse *= 0.2 + 0.8 * (1.0 - shadowness);
+                    //     specular *= 1.0 - shadowness;
+                    // }
+                }
                 
-//                 gl_FragColor.xyz += diffuse + specular;
+                gl_FragColor.xyz += diffuse + specular;
 
-//                 //vec3 final_color = gl_FragColor.xyz;
+                //vec3 final_color = gl_FragColor.xyz;
 
-//             } `;
-//     }
-// }
+            } `;
+    }
+}
