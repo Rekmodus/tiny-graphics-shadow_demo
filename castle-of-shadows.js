@@ -118,7 +118,7 @@ export class Castle_of_shadows extends Simulation {
         this.floor = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
             color: color(.1, .1, .1, 1),
             ambient: 0.5, diffusivity: 1, specularity: 1,
-            color_texture: new Texture("assets/grid.png"),
+            color_texture: new Texture("assets/CastleWall.png"),
             light_depth_texture: null
         })
 
