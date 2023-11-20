@@ -366,7 +366,6 @@ export class Team_project extends Simulation {
         this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
         this.shapes.teapot.draw(context, program_state, model_trans_ball_2, shadow_pass? this.stars : this.pure);
 
-            
         let agent_trans = Mat4.translation(this.agent_pos[0], this.agent_pos[1], this.agent_pos[2]).
         times(Mat4.scale(this.agent_size,this.agent_size,this.agent_size));
         this.moon = agent_trans;

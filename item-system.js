@@ -58,7 +58,19 @@ export class Item_System {
 
     player_holds(itemID) {
         // Checks if the player holds an item of a specific type
+        if (this.held_item == null) {return false;}
         return this.held_item.ID === itemID;
+    }
+
+    destroy(item) {
+        // Removes an item from the scene
+        if (item == null || this.item_list.length === 0) {return}
+
+        let i = 0;
+        for (; i < this.item_list.length && item !== this.item_list[i]; i++) {}
+
+        if (item === this.held_item) {this.held_item = null}
+        this.item_list.splice(i, 1);
     }
 }
 
@@ -67,10 +79,10 @@ export class Item {
     // Item ID Numbers
     // These are used to identify different types of items
     // Item ID can be checked with the player_holds method in Item_System
-    Debug = 0;
-    Flashlight = 1;
-    Key = 2;
-    Skull = 3;
+    static Debug= 0;
+    static Flashlight = 1;
+    static Key = 2;
+    static Skull = 3;
 
     constructor(ID, model, transform, material) {
         Object.assign(this, {

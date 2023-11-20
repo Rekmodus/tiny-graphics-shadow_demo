@@ -2,6 +2,7 @@ import { Simulation } from './examples/control-demo.js';
 import {defs, tiny} from './examples/common.js';
 import {Body, Test_Data} from "./examples/collisions-demo.js";
 import {Item_System, Item} from "./item-system.js";
+import {Interaction_System} from "./interaction-system.js";
 import {Movement_Controls_2} from './first-person-controller.js' 
 import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader } from './shaders.js';
 import {Shape_From_File} from './examples/obj-file-demo.js'
@@ -13,7 +14,8 @@ const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, S
 
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
-
+let open_teapot_door = false;
+export {open_teapot_door};
 
 // 2D shape, to display the texture buffer
 const Square =
@@ -167,10 +169,24 @@ export class Castle_of_shadows extends Simulation {
 
         this.item_sys.held_item = this.item_sys.create_item(Item.Flashlight, this.shapes.Flashlight, Mat4.identity(), this.flash);
         this.item_sys.create_item(Item.Debug, this.shapes.cube, Mat4.translation(0, 1, 10), this.wood);
-        this.item_sys.create_item(Item.Debug, this.shapes.teapot, model_transform, this.wood);
+        this.item_sys.create_item(Item.Key, this.shapes.teapot, model_transform, this.wood);
 
+//Interaction System
+
+        this.interact_sys = new Interaction_System();
+
+        this.interact_sys.create_interaction(Mat4.translation(5, 1, 10), (interaction) => {
+            if (!this.item_sys.player_holds(Item.Key)) {
+                console.log("Bring me some tea!!!");
+                return;
+            }
+
+            console.log("This teapot is empty. Whatever, you can pass.");
+            this.item_sys.destroy(this.item_sys.held_item);
+            this.interact_sys.destroy(interaction);
+            open_teapot_door = true;
+        });
     }
-
 
     make_control_panel() {
         // make_control_panel(): Sets up a panel of interactive HTML elements, including
@@ -217,6 +233,7 @@ export class Castle_of_shadows extends Simulation {
     on_interact() {
         // Called when interact button is pressed
         this.item_sys.pick_up_item();
+        this.interact_sys.interact();
     }
 
     texture_buffer_init(gl) {
@@ -345,7 +362,11 @@ export class Castle_of_shadows extends Simulation {
         this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
         this.shapes.teapot.draw(context, program_state, model_trans_ball_2, shadow_pass? this.stars : this.pure);
 
-            
+        if (!open_teapot_door) {
+            let door_transform = Mat4.translation(5, 1, 10).times(Mat4.scale(0.25, 2, 1));
+            this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood : this.pure);
+        }
+
         let agent_trans = Mat4.translation(this.agent_pos[0], this.agent_pos[1], this.agent_pos[2]).
         times(Mat4.scale(this.agent_size,this.agent_size,this.agent_size));
         this.moon = agent_trans;
@@ -508,6 +529,7 @@ export class Castle_of_shadows extends Simulation {
         }
 
         this.item_sys.update_item_in_range(program_state.camera_transform);
+        this.interact_sys.update_interact_in_range(program_state.camera_transform);
     }
 
     update_state(dt) {
