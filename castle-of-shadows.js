@@ -53,12 +53,16 @@ export class Castle_of_shadows extends Simulation {
             "key": new Shape_From_File("assets/key.obj"),
             "chain": new Shape_From_File("assets/chain.obj"),
             "skeleton": new Shape_From_File("assets/skeleton.obj"),
+            "barrel1": new Shape_From_File("assets/barrel1.obj"),
+            "barrel2": new Shape_From_File("assets/barrel2.obj"),
+            "barrel3": new Shape_From_File("assets/barrel3.obj"),
+            "barrel4": new Shape_From_File("assets/barrel4.obj"),
             "sphere": new Subdivision_Sphere(6),
             "cube": new Cube(),
             "floor": new Cube(),
             "square_2d": new Square(),
         };
-        this.shapes.floor.arrays.texture_coord.forEach(p => p.scale_by(2));
+        this.shapes.floor.arrays.texture_coord.forEach(p => p.scale_by(4*5));
 
 
         let moon;
@@ -143,6 +147,13 @@ export class Castle_of_shadows extends Simulation {
             color: color(.1, .1, .1, 1),
             ambient: 0.5, diffusivity: 1, specularity: 1,
             color_texture: new Texture("assets/chain_tex.jpg"),
+            light_depth_texture: null
+        })
+
+        this.barrel = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/Barrels_Albedo.png"),
             light_depth_texture: null
         })
 
@@ -274,6 +285,10 @@ export class Castle_of_shadows extends Simulation {
         this.wood.light_depth_texture = this.light_depth_texture
         this.mon.light_depth_texture = this.light_depth_texture
         this.Wall.light_depth_texture = this.light_depth_texture
+        this.Key.light_depth_texture = this.light_depth_texture
+        this.Chain.light_depth_texture = this.light_depth_texture
+        this.skeleton.light_depth_texture = this.light_depth_texture
+        this.barrel.light_depth_texture = this.light_depth_texture
 
 
         this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
@@ -357,8 +372,8 @@ export class Castle_of_shadows extends Simulation {
             this.shapes.table.draw(context, program_state, model_transform, shadow_pass? this.wood : this.pure);
         }
 
-        let model_trans_floor = Mat4.translation(0, 0, 0).times(Mat4.scale(8, 0.1, 5));
-        let model_trans_ceil = Mat4.translation(0, 8, 0).times(Mat4.scale(8, 0.1, 5));
+        let model_trans_floor = Mat4.translation(0, 0, 0).times(Mat4.scale(16 * 5, 0.1, 10 * 5));
+        let model_trans_ceil = Mat4.translation(0, 8, 0).times(Mat4.scale(16 * 5, 0.1, 10 * 5));
         let model_trans_ball_0 = Mat4.translation(0, 1, 0);
         let model_trans_ball_1 = Mat4.translation(5, 0.5, 0);
         let model_trans_ball_2 = Mat4.translation(-5, 1.8, 0).times(Mat4.scale(0.5, 0.5, 0.5));
@@ -386,6 +401,15 @@ export class Castle_of_shadows extends Simulation {
 
         this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
         this.shapes.skeleton.draw(context, program_state, model_trans_ball_2, shadow_pass? this.skeleton : this.pure);
+
+        let model_trans_barrel_1 = Mat4.translation(-10, 1, 3);
+        let model_trans_barrel_2 = Mat4.translation(-12, 1, 3);
+        let model_trans_barrel_3 = Mat4.translation(-14, 1, 3);
+        let model_trans_barrel_4 = Mat4.translation(-16, 1, 3);
+        this.shapes.barrel1.draw(context, program_state, model_trans_barrel_1, shadow_pass? this.barrel : this.pure);
+        this.shapes.barrel2.draw(context, program_state, model_trans_barrel_2, shadow_pass? this.barrel : this.pure);
+        this.shapes.barrel3.draw(context, program_state, model_trans_barrel_3, shadow_pass? this.barrel : this.pure);
+        this.shapes.barrel4.draw(context, program_state, model_trans_barrel_4, shadow_pass? this.barrel : this.pure);
         
         let model_trans_key_3 = Mat4.translation(0, 1, 3).times(Mat4.scale(0.4, 0.4, 0.4));
         this.shapes.key.draw(context, program_state, model_trans_key_3, shadow_pass? this.Key : this.pure);
