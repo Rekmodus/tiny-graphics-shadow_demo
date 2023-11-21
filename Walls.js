@@ -83,3 +83,14 @@ for (const [key, value] of Object.entries(room3_collision)) {
 }
 
 export { walls};
+
+let triggers = [];
+
+
+let trigger_mon = Mat4.translation(8, 2, 0);
+let end_trigger_mon = Mat4.translation(8, 2, 10);
+
+triggers.push(room3_parent.times(trigger_mon));
+triggers.push(room3_parent.times(end_trigger_mon));
+
+export { triggers};

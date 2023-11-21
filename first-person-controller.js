@@ -9,9 +9,14 @@ const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivisio
 import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
-import { walls } from './Walls.js';
+import { walls, triggers } from './Walls.js';
 //import {open_teapot_door} from './castle-of-shadows.js';
 import {gate_open} from './castle-of-shadows.js';
+
+let monster_trigger = false;
+export {monster_trigger};
+
+let monster_init = false;
 
 export class Movement_Controls_2 extends Scene {
         // **Movement_Controls** is a Scene that can be attached to a canvas, like any other
@@ -179,10 +184,10 @@ export class Movement_Controls_2 extends Scene {
             //     this.inverse().set(Mat4.look_at(vec3(10, 0, 0), vec3(0, 0, 0), vec3(0, 1, 0)));
             //     this.matrix().set(Mat4.inverse(this.inverse()));
             // }, "#8B8885");
-            this.key_triggered_button("from rear", ["3"], () => {
-                this.inverse().set(Mat4.look_at(vec3(0, 0, -10), vec3(0, 0, 0), vec3(0, 1, 0)));
-                this.matrix().set(Mat4.inverse(this.inverse()));
-            }, "#8B8885");
+            // this.key_triggered_button("from rear", ["3"], () => {
+            //     this.inverse().set(Mat4.look_at(vec3(0, 0, -10), vec3(0, 0, 0), vec3(0, 1, 0)));
+            //     this.matrix().set(Mat4.inverse(this.inverse()));
+            // }, "#8B8885");
             // this.key_triggered_button("from left", ["4"], () => {
             //     this.inverse().set(Mat4.look_at(vec3(-10, 0, 0), vec3(0, 0, 0), vec3(0, 1, 0)));
             //     this.matrix().set(Mat4.inverse(this.inverse()));
@@ -307,8 +312,45 @@ export class Movement_Controls_2 extends Scene {
         }
 
         
-        check_wall_collisions(w, graphics_state, ){
+        check_wall_collisions(w, graphics_state, triggers){
             const playerSize = vec3(1.5, 1.5, 1.5); // Adjust the size of the player
+
+            //check triggers
+            for (let i = 0; i < triggers.length; i++) {
+                const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+                let trigger = triggers[i];
+
+
+                const minExtent = trigger.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
+                const maxExtent = trigger.times(vec4(1, 1, 1, 1.0)).to3();
+
+
+                const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
+                const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
+                
+                // Simple AABB collision
+                if (
+                    playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
+                    playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
+                ) {
+
+                    console.log("Collision with trigger " + i);
+                    if (i == 0){
+                        // start jumpscare
+                        if(!monster_init){
+                            monster_trigger = true;      
+                            monster_init = true;          
+                        }
+
+                    }
+                    if (i == 1){
+                        // start jumpscare
+                        monster_trigger = false;
+                    }
+
+                }
+            }
 
             for (let i = 0; i < w.length; i++) {
                 const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
@@ -408,7 +450,7 @@ export class Movement_Controls_2 extends Scene {
             //console.log("cam z?" + this.z_axis);
 
             // Try to move player. If collide then move player back!
-            if (this.check_wall_collisions(walls, graphics_state)){
+            if (this.check_wall_collisions(walls, graphics_state, triggers)){
                 // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
                 this.first_person_flyaround(0, dt * m * -1);
             }

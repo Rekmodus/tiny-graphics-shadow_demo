@@ -8,6 +8,7 @@ import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader }
 import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
+import {monster_trigger} from './first-person-controller.js'
 
 // Pull these names into this module's scope for convenience:
 const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
@@ -19,7 +20,6 @@ const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivisio
 
 let gate_open = false;
 export {gate_open};
-
 
 let skull_drop = false;
 export {skull_drop};
@@ -58,7 +58,7 @@ export class Castle_of_shadows extends Simulation {
             "Flashlight": new Shape_From_File("assets/flash.obj"),
             "picture": new Shape_From_File("assets/Picture.obj"),
             "table": new Shape_From_File("assets/Small Dirty Table 01.obj"),
-            //"monster": new Shape_From_File("assets/monster.obj"),
+            "monster": new Shape_From_File("assets/thing.obj"),
             "key": new Shape_From_File("assets/key.obj"),
             "chain": new Shape_From_File("assets/chain.obj"),
             "skeleton": new Shape_From_File("assets/skeleton.obj"),
@@ -197,6 +197,16 @@ export class Castle_of_shadows extends Simulation {
             color: color(.1, .1, .1, 1),
             ambient: 0.6, diffusivity: 0.8, specularity: 0.9,
             color_texture: new Texture("assets/water.png"),
+        })
+
+        this.thing = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.6, diffusivity: 0.3, specularity: 0.4,
+            color_texture: new Texture("assets/thing_Base_color.png"),
+        })
+
+        this.invisible = new Material(new Phong_Shader(), {
+            color: color(0, 0, 0, 0),
         })
 
         // For the first pass
@@ -641,9 +651,11 @@ export class Castle_of_shadows extends Simulation {
             for (const [key, value] of Object.entries(this.room3)) {
                 this.shapes.cube.draw(context, program_state, this.room3_parent.times(value), shadow_pass? this.Wall : this.pure);
             }
-            const water = Mat4.translation(0, 0, 0).times(Mat4.scale(10, 0.1, 5)).times(Mat4.rotation(-3,1,0,0));
+            const water = Mat4.translation(0, 0, 0).times(Mat4.scale(5, 0.1, 5)).times(Mat4.rotation(-3,1,0,0));
+            const water_box = Mat4.translation(5, 0, 0).times(Mat4.scale(0.5, 0.2, 2));
 
             this.shapes.cube.draw(context, program_state, this.room3_parent.times(water), shadow_pass? this.water : this.pure);
+            this.shapes.cube.draw(context, program_state, this.room3_parent.times(water_box), shadow_pass? this.Wall : this.pure);
             this.shapes.chain.draw(context, program_state, this.room3_parent.times( Mat4.translation(0, 1.5, 4.5)).times(Mat4.scale(0.8, 0.8, 0.8)).times(Mat4.rotation(-Math.PI/2,1,0,0)), shadow_pass? this.Chain : this.pure);
             this.shapes.skull.draw(context, program_state,this.room3_parent.times( Mat4.translation(0, 0.33, -4)).times(Mat4.scale(0.2, 0.2, 0.2)).times(Mat4.rotation(0.2*Math.PI/2,1,0,0)), shadow_pass? this.skull : this.pure);
             this.shapes.skull.draw(context, program_state,this.room3_parent.times( Mat4.translation(1.2, 0.33, -4)).times(Mat4.scale(0.2, 0.2, 0.2)).times(Mat4.rotation(0.23*Math.PI/2,1,0,0)), shadow_pass? this.skull : this.pure);
@@ -656,7 +668,14 @@ export class Castle_of_shadows extends Simulation {
             this.shapes.barrel1.draw(context, program_state,this.room3_parent.times( Mat4.translation(15, 1, 22)), shadow_pass? this.barrel : this.pure);
             this.shapes.table.draw(context, program_state,this.room3_parent.times( Mat4.translation(7, 0, 17)), shadow_pass? this.wood : this.pure);
             this.shapes.skull.draw(context, program_state,this.room3_parent.times( Mat4.translation(7, 1, 17)).times(Mat4.scale(0.2, 0.2, 0.2)).times(Mat4.rotation(1.9,0,1,0.1)), shadow_pass? this.skull : this.pure);
+            //let t1 = program_state.animation_time;
+            if(skull_drop && monster_trigger){
+                this.shapes.monster.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, 2, 15)).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
+            }else{
+                // hide under the floor but still draw (for performance)
+                this.shapes.monster.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, -10, 15)).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
 
+            }
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall1), shadow_pass? this.floor : this.pure);
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall2), shadow_pass? this.floor : this.pure);
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall3), shadow_pass? this.floor : this.pure);
@@ -794,7 +813,7 @@ export class Castle_of_shadows extends Simulation {
         }
    
         if (skull_drop){
-            while (this.bodies.length < 50)
+            while (this.bodies.length < 20)
                 this.bodies.push(new Body(this.shapes.skull, this.skull , vec3(0.3, 0.3, 0.3))
                     .emplace(this.room3_parent.times(Mat4.translation(...vec3(0, 15, 0).randomized(10))),
                         vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random() * 0.3));            
