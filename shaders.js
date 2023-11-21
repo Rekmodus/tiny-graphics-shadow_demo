@@ -173,20 +173,28 @@ export class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Pho
             void main(){
                 // Sample the texture image in the correct place:
                 vec2 f_tex_2 = f_tex_coord;
-                vec2 f_tex_3 = vec2(f_tex_2.s - 2.0 * animation_time, f_tex_2.t);
+                vec2 f_tex_3 = vec2(f_tex_2.s - 1.0 * animation_time, f_tex_2.t);
 
                 vec4 tex_color = texture2D( texture, f_tex_3 );
                 if (!use_texture)
                     tex_color = vec4(0, 0, 0, 1);
                 if( tex_color.w < .01 ) discard;
                 
+                // Scale the perturbation factor to increase the bump mapping effect
+                float bump_strength = 2.0; // Adjust this value to control the strength
+                vec3 bumped_N = N + bump_strength * (tex_color.rgb - 0.5 * vec3(1, 1, 1));
+                // Slightly disturb normals based on sampling the same image that was used for texturing:
+                //vec3 bumped_N  = N + tex_color.rgb - .5*vec3(1,1,1);
+                
                 // Compute an initial (ambient) color:
                 gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
                 
                 // Compute the final color with contributions from lights:
                 vec3 diffuse, specular;
-                vec3 other_than_ambient = phong_model_lights( normalize( N ), vertex_worldspace, diffuse, specular );
+                vec3 other_than_ambient = phong_model_lights( normalize( bumped_N ), vertex_worldspace, diffuse, specular );
                 
+
+
                 vec3 final_color = gl_FragColor.xyz;
 
                 float fog_density = 0.15;
@@ -194,7 +202,7 @@ export class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Pho
                 // Simulate fog based on distance from the camera:
                 float fog_distance = length(vertex_worldspace - camera_center);
 
-                float fog_factor = clamp((fog_distance - 10.0) / (40.0 - 10.0), 0.0, 1.0);
+                float fog_factor = clamp((fog_distance - 5.0) / (40.0 - 5.0), 0.0, 1.0);
 
                 // Use an exponential function for fog density
                 fog_factor = 1.0 - exp(-fog_density * fog_distance);
@@ -202,7 +210,8 @@ export class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Pho
                 fog_factor = clamp(fog_factor, 0.0, 1.0);
                 vec3 fog_color = vec3(0, 0, 0); // Adjust the fog color
                 gl_FragColor.xyz = mix(final_color, fog_color, fog_factor);
-                
+
+
                 // Deal with shadow:
                 if (draw_shadow) {
                     vec4 light_tex_coord = (light_proj_mat * light_view_mat * vec4(vertex_worldspace, 1.0));
@@ -239,7 +248,8 @@ export class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Pho
                 
                     diffuse *= 0.2 + 0.8 * (1.0 - combined_shadow);
                     specular *= 1.0 - combined_shadow;
-                          
+
+                    ///////      
                     // float shadowness = PCF_shadow(light_tex_coord.xy, projected_depth);
                     
                     // if (inRange && shadowness > 0.3) {
@@ -249,9 +259,6 @@ export class Shadow_Scroll_Textured_Phong_Shader extends Shadow_Fog_Textured_Pho
                 }
                 
                 gl_FragColor.xyz += diffuse + specular;
-
-                //vec3 final_color = gl_FragColor.xyz;
-
             } `;
     }
 }
