@@ -843,9 +843,8 @@ export class Castle_of_shadows extends Simulation {
     }
 
     show_explanation(document_element) {
-        document_element.innerHTML += "<p>This is a first test for the team project "
-            + " undecided project"
-            + "</p><p>Using the shadow template</p>";
+        document_element.innerHTML += "<h1>Castle of Shadows </h1>"
+            + "</p><p>Justin Morgan, Richard Nguyen, and Abdulaziz Al Jaloud</p>";
     }
 }
 
