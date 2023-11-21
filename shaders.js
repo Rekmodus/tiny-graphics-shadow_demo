@@ -55,7 +55,7 @@ export class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shad
                 if( tex_color.w < .01 ) discard;
 
                 // Scale the perturbation factor to increase the bump mapping effect
-                float bump_strength = 0.5; // Adjust this value to control the strength
+                float bump_strength = 1.0; // Adjust this value to control the strength
                 vec3 bumped_N = N + bump_strength * (tex_color.rgb - 0.5 * vec3(1, 1, 1));
                 // Slightly disturb normals based on sampling the same image that was used for texturing:
                 //vec3 bumped_N  = N + tex_color.rgb - .5*vec3(1,1,1);

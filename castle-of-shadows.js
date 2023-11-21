@@ -49,7 +49,10 @@ export class Castle_of_shadows extends Simulation {
             "Flashlight": new Shape_From_File("assets/flash.obj"),
             "picture": new Shape_From_File("assets/Picture.obj"),
             "table": new Shape_From_File("assets/Small Dirty Table 01.obj"),
-            "monster": new Shape_From_File("assets/monster.obj"),
+            //"monster": new Shape_From_File("assets/monster.obj"),
+            "key": new Shape_From_File("assets/key.obj"),
+            "chain": new Shape_From_File("assets/chain.obj"),
+            "skeleton": new Shape_From_File("assets/skeleton.obj"),
             "sphere": new Subdivision_Sphere(6),
             "cube": new Cube(),
             "floor": new Cube(),
@@ -129,6 +132,27 @@ export class Castle_of_shadows extends Simulation {
             light_depth_texture: null
         })
 
+        this.Key = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.2, .2, .2, 1),
+            ambient: 1, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/key_color.png"),
+            light_depth_texture: null
+        })
+
+        this.Chain = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/chain_tex.jpg"),
+            light_depth_texture: null
+        })
+
+        this.skeleton = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/diffuseMap.png"),
+            light_depth_texture: null
+        })
+
         // For the first pass
         this.pure = new Material(new Color_Phong_Shader(), {
         })
@@ -147,7 +171,8 @@ export class Castle_of_shadows extends Simulation {
 
         // The agent
         // this.agent = new defs.Subdivision_Sphere(4);
-        this.agent = new Shape_From_File("assets/monster.obj");
+        // This is old code from the collision demo. We could reuse it somehow
+        this.agent = new defs.Subdivision_Sphere(4);
         this.agent_pos = vec3(1.2, 1.9, 3.5);
         this.agent_size = 0.5;
 
@@ -337,7 +362,7 @@ export class Castle_of_shadows extends Simulation {
         let model_trans_ball_0 = Mat4.translation(0, 1, 0);
         let model_trans_ball_1 = Mat4.translation(5, 0.5, 0);
         let model_trans_ball_2 = Mat4.translation(-5, 1.8, 0).times(Mat4.scale(0.5, 0.5, 0.5));
-        let model_trans_ball_3 = Mat4.translation(0, 1, 3);
+        
         let model_trans_ball_4 = Mat4.translation(-5, 1, -3);
 
         let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5));
@@ -360,7 +385,12 @@ export class Castle_of_shadows extends Simulation {
 
 
         this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
-        this.shapes.teapot.draw(context, program_state, model_trans_ball_2, shadow_pass? this.stars : this.pure);
+        this.shapes.skeleton.draw(context, program_state, model_trans_ball_2, shadow_pass? this.skeleton : this.pure);
+        
+        let model_trans_key_3 = Mat4.translation(0, 1, 3).times(Mat4.scale(0.4, 0.4, 0.4));
+        this.shapes.key.draw(context, program_state, model_trans_key_3, shadow_pass? this.Key : this.pure);
+
+        this.shapes.chain.draw(context, program_state, Mat4.translation(-4, 1, 8).times(Mat4.scale(0.8, 0.8, 0.8)), shadow_pass? this.Chain : this.pure);
 
         if (!open_teapot_door) {
             let door_transform = Mat4.translation(5, 1, 10).times(Mat4.scale(0.25, 2, 1));
