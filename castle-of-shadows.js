@@ -101,14 +101,14 @@ export class Castle_of_shadows extends Simulation {
         // For the table
         this.wood = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
             color: color(.1, .1, .1, 1),
-            ambient: .4, diffusivity: 1, specularity: .5,
+            ambient: .4, diffusivity: 1, specularity: 1,
             color_texture: new Texture("assets/texture01.png"),
             light_depth_texture: null
         });
 
         // For the monster
         this.mon = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
-            color: color(.1, .1, .1, 1),
+            color: color(.2, .2, .2, 1),
             ambient: .4, diffusivity: 1, specularity: .5,
             color_texture: new Texture("assets/full_low_body__BaseColor.png"),
             light_depth_texture: null
@@ -116,8 +116,8 @@ export class Castle_of_shadows extends Simulation {
 
         // For the floor or other plain objects
         this.floor = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
-            color: color(.1, .1, .1, 1),
-            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color: color(.2, .2, .2, 1),
+            ambient: 0.6, diffusivity: 1, specularity: 1,
             color_texture: new Texture("assets/CastleWall.png"),
             light_depth_texture: null
         })

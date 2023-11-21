@@ -53,13 +53,19 @@ export class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shad
                 if (!use_texture)
                     tex_color = vec4(0, 0, 0, 1);
                 if( tex_color.w < .01 ) discard;
+
+                // Scale the perturbation factor to increase the bump mapping effect
+                float bump_strength = 0.5; // Adjust this value to control the strength
+                vec3 bumped_N = N + bump_strength * (tex_color.rgb - 0.5 * vec3(1, 1, 1));
+                // Slightly disturb normals based on sampling the same image that was used for texturing:
+                //vec3 bumped_N  = N + tex_color.rgb - .5*vec3(1,1,1);
                 
                 // Compute an initial (ambient) color:
                 gl_FragColor = vec4( ( tex_color.xyz + shape_color.xyz ) * ambient, shape_color.w * tex_color.w ); 
                 
                 // Compute the final color with contributions from lights:
                 vec3 diffuse, specular;
-                vec3 other_than_ambient = phong_model_lights( normalize( N ), vertex_worldspace, diffuse, specular );
+                vec3 other_than_ambient = phong_model_lights( normalize( bumped_N ), vertex_worldspace, diffuse, specular );
                 
 
 
