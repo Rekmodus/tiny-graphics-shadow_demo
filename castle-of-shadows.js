@@ -57,6 +57,7 @@ export class Castle_of_shadows extends Simulation {
             "barrel2": new Shape_From_File("assets/barrel2.obj"),
             "barrel3": new Shape_From_File("assets/barrel3.obj"),
             "barrel4": new Shape_From_File("assets/barrel4.obj"),
+            "skull": new Shape_From_File("assets/Skull.obj"),
             "sphere": new Subdivision_Sphere(6),
             "cube": new Cube(),
             "floor": new Cube(),
@@ -164,6 +165,20 @@ export class Castle_of_shadows extends Simulation {
             light_depth_texture: null
         })
 
+        this.wood_door = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/wood_door.png"),
+            light_depth_texture: null
+        })
+
+        this.skull = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.1, .1, .1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/skull_Base_color.png"),
+            light_depth_texture: null
+        })
+
         // For the first pass
         this.pure = new Material(new Color_Phong_Shader(), {
         })
@@ -184,8 +199,8 @@ export class Castle_of_shadows extends Simulation {
         // this.agent = new defs.Subdivision_Sphere(4);
         // This is old code from the collision demo. We could reuse it somehow
         this.agent = new defs.Subdivision_Sphere(4);
-        this.agent_pos = vec3(1.2, 1.9, 3.5);
-        this.agent_size = 0.5;
+        this.agent_pos = vec3(0, 1.9, 10.1);
+        this.agent_size = 2.5;
 
         this.control = {};
         this.control.w = false;
@@ -289,6 +304,7 @@ export class Castle_of_shadows extends Simulation {
         this.Chain.light_depth_texture = this.light_depth_texture
         this.skeleton.light_depth_texture = this.light_depth_texture
         this.barrel.light_depth_texture = this.light_depth_texture
+        this.skull.light_depth_texture = this.light_depth_texture
 
 
         this.lightDepthTextureSize = LIGHT_DEPTH_TEX_SIZE;
@@ -417,18 +433,20 @@ export class Castle_of_shadows extends Simulation {
         this.shapes.chain.draw(context, program_state, Mat4.translation(-4, 1, 8).times(Mat4.scale(0.8, 0.8, 0.8)), shadow_pass? this.Chain : this.pure);
 
         if (!open_teapot_door) {
-            let door_transform = Mat4.translation(5, 1, 10).times(Mat4.scale(0.25, 2, 1));
-            this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood : this.pure);
+            let door_transform = Mat4.translation(5, 1.5, 10).times(Mat4.scale(0.25, 3, 1));
+            this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
         }
 
-        let agent_trans = Mat4.translation(this.agent_pos[0], this.agent_pos[1], this.agent_pos[2]).
-        times(Mat4.scale(this.agent_size,this.agent_size,this.agent_size));
-        this.moon = agent_trans;
+        //let agent_trans = Mat4.translation(this.agent_pos[0], this.agent_pos[1], this.agent_pos[2]).
+        //times(Mat4.scale(this.agent_size,this.agent_size,this.agent_size));
+        //this.moon = agent_trans;
         // console.log("moon!!" + this.moon);
         //() => this.attached = () => this.agent_trans_;
 
-        this.agent_body = new Body(this.agent.draw(context, program_state, agent_trans, shadow_pass? this.mon : this.pure));
-
+        //this.agent.draw(context, program_state, agent_trans, shadow_pass? this.mon : this.pure);
+        //this.agent_pos = program_state.camera_transform
+        //console.log("cam trans");
+        this.agent_pos = program_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
     
         if (this.attached){
             if (this.attached() != null){
@@ -592,20 +610,25 @@ export class Castle_of_shadows extends Simulation {
         // Generate additional moving bodies if there ever aren't enough:
         // //console.log("Hello world");
         if (this.swarm){
-            while (this.bodies.length < 100)
-                this.bodies.push(new Body(this.shapes.sphere, this.stars , vec3(0.3, 0.3 + Math.random(), 0.3))
+            while (this.bodies.length < 50)
+                this.bodies.push(new Body(this.shapes.skull, this.skull , vec3(0.3, 0.3, 0.3))
                     .emplace(Mat4.translation(...vec3(0, 15, 0).randomized(10)),
-                        vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random()));            
+                        vec3(0, -1, 0).randomized(2).normalized().times(3), Math.random() * 0.3));            
         }
 
         for (let b of this.bodies) {
             // Gravity on Earth, where 1 unit in world space = 1 meter:
             b.linear_velocity[1] += dt * -9.8;
             // If about to fall through floor, reverse y velocity:
-            if (b.center[1] < 0 && b.linear_velocity[1] < 0)
-                b.linear_velocity[1] *= -.8;
+            if (b.center[1] < 0.5 && b.linear_velocity[1] < 0){
+                b.linear_velocity[1] *= -.2;
+                b.linear_velocity[0] *= .99;
+                b.linear_velocity[2] *= .99;
+            }
+
             // Simple Sphere Collision Implementation
-            let dis = b.center.minus(this.agent_pos);
+            const adjusted_pos = vec3(this.agent_pos[0], this.agent_pos[1] - 1.9, this.agent_pos[2])
+            let dis = b.center.minus(adjusted_pos);
             if (dis.norm() < this.agent_size) {
                 b.linear_velocity.add_by(dis.times(dt * 98));
             }
