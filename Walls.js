@@ -10,7 +10,10 @@ const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, S
 
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
+const gate_room_base_transform = Mat4.identity();
+
 let walls = [];
+/*
 let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5)).times(Mat4.identity());
 let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8)).times(Mat4.identity());
 let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33)).times(Mat4.identity());
@@ -24,5 +27,31 @@ walls.push(model_trans_wall_3);
 walls.push(model_trans_wall_4);
 
 walls.push(door_transform);
+*/
+
+//Gate Room Walls
+
+const error = -0.375;
+
+let gr_wall1 = gate_room_base_transform.times(Mat4.translation(7.5, 2, 0)).times(Mat4.scale(0.25, 1, 7.5));
+let gr_wall2 = gr_wall1.times(Mat4.translation(-60, 0, 0));
+let gr_wall3 = gate_room_base_transform.times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.translation(7.5, 2, 0)).times(Mat4.scale(0.25 + error, 1, 7.5));
+
+let gr_wall4 = gate_room_base_transform.times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.translation(-7.5, 2, -4.5)).times(Mat4.scale(0.25 + error, 1, 3));
+let gr_wall5 = gr_wall4.times(Mat4.translation(0, 0, 3));
+
+let gr_wall6 = gate_room_base_transform.times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.translation(2.5, 2, -4.5)).times(Mat4.scale(0.25 + error, 1, 3));
+let gr_wall7 = gr_wall6.times(Mat4.translation(0, 0, 3));
+
+let gr_gate = gate_room_base_transform.times(Mat4.translation(0, 1, -2.5)).times(Mat4.scale(3, 2, 0.25));
+
+walls.push(gr_wall1);
+walls.push(gr_wall2);
+walls.push(gr_wall3);
+walls.push(gr_wall4);
+walls.push(gr_wall5);
+walls.push(gr_wall6);
+walls.push(gr_wall7);
+walls.push(gr_gate);
 
 export { walls};

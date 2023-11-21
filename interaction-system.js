@@ -6,7 +6,7 @@ export class Interaction_System {
     // Code is mostly copied from item-system.js, will probably make Item_System call this class in the future
     // instead
 
-    interact_radius = 2;
+    interact_radius = 3;
 
     interactions = [];
     interact_in_range;

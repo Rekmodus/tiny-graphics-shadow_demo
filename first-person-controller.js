@@ -10,7 +10,8 @@ import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
 import { walls } from './Walls.js';
-import {open_teapot_door} from './castle-of-shadows.js';
+//import {open_teapot_door} from './castle-of-shadows.js';
+import {gate_open} from './castle-of-shadows.js';
 
 export class Movement_Controls_2 extends Scene {
         // **Movement_Controls** is a Scene that can be attached to a canvas, like any other
@@ -313,7 +314,7 @@ export class Movement_Controls_2 extends Scene {
                 const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
 
                 let wall = w[i];
-
+/*
                 if(i == 3){
                     if (this.door1){
                         wall = Mat4.translation(0, 1, 0).times(Mat4.identity());
@@ -321,8 +322,11 @@ export class Movement_Controls_2 extends Scene {
                         wall = Mat4.translation(2, 1, 0).times(Mat4.identity());
                     }
                 }
+*/
+                //if (i === 4 && open_teapot_door) {continue;}
 
-                if (i === 4 && open_teapot_door) {continue;}
+                const gate_index = 7;
+                if (i === gate_index && gate_open) {continue}
 
                 //const index = walls.indexOf(searchWall); // Returns the index of the first occurrence
                 //const exists = walls.includes(searchWall); // Returns true if the element exists in the array

@@ -14,8 +14,13 @@ const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, S
 
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
-let open_teapot_door = false;
-export {open_teapot_door};
+//let open_teapot_door = false;
+//export {open_teapot_door};
+
+let gate_open = false;
+export {gate_open};
+
+const gate_room_base_transform = Mat4.identity();
 
 // 2D shape, to display the texture buffer
 const Square =
@@ -133,7 +138,7 @@ export class Castle_of_shadows extends Simulation {
         this.Wall = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
             color: color(.1, .1, .1, 1),
             ambient: 0.5, diffusivity: 1, specularity: 1,
-            color_texture: new Texture("assets/Wall.png"),
+            color_texture: new Texture("assets/CastleWall.png"),
             light_depth_texture: null
         })
 
@@ -176,6 +181,11 @@ export class Castle_of_shadows extends Simulation {
             color: color(.1, .1, .1, 1),
             ambient: 0.5, diffusivity: 1, specularity: 1,
             color_texture: new Texture("assets/skull_Base_color.png"),
+        })
+
+        this.bar = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(0.1, 0.1, 0.1, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
             light_depth_texture: null
         })
 
@@ -216,16 +226,31 @@ export class Castle_of_shadows extends Simulation {
 
         this.item_sys = new Item_System();
 
-        let model_transform = Mat4.translation(5, 1.5, 0).times(Mat4.rotation(-Math.PI/2, 1, 0, 0));
+        //let model_transform = Mat4.translation(5, 1.5, 0).times(Mat4.rotation(-Math.PI/2, 1, 0, 0));
 
         this.item_sys.held_item = this.item_sys.create_item(Item.Flashlight, this.shapes.Flashlight, Mat4.identity(), this.flash);
-        this.item_sys.create_item(Item.Debug, this.shapes.cube, Mat4.translation(0, 1, 10), this.wood);
-        this.item_sys.create_item(Item.Key, this.shapes.teapot, model_transform, this.wood);
+
+        let box_transform = gate_room_base_transform.times(Mat4.translation(0, 0.125, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
+        let key_transform = gate_room_base_transform.times(Mat4.translation(-3, 0.75, -5)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
+
+        this.item_sys.create_item(Item.Box, this.shapes.cube, box_transform, this.wood_door);
+        this.item_sys.create_item(Item.Key, this.shapes.key, key_transform, this.Key);
+
+        //this.item_sys.create_item(Item.Debug, this.shapes.cube, Mat4.translation(0, 1, 10), this.wood);
+        //this.item_sys.create_item(Item.Key, this.shapes.teapot, model_transform, this.wood);
 
 //Interaction System
 
         this.interact_sys = new Interaction_System();
 
+        this.interact_sys.create_interaction(gate_room_base_transform.times(Mat4.translation(-3.75, 0, 0)), (interaction) => {
+            if (!this.item_sys.player_holds(Item.Box)) {return}
+
+            this.item_sys.destroy(this.item_sys.held_item);
+            this.interact_sys.destroy(interaction);
+            gate_open = true;
+        })
+        /*
         this.interact_sys.create_interaction(Mat4.translation(5, 1, 10), (interaction) => {
             if (!this.item_sys.player_holds(Item.Key)) {
                 console.log("Bring me some tea!!!");
@@ -237,6 +262,7 @@ export class Castle_of_shadows extends Simulation {
             this.interact_sys.destroy(interaction);
             open_teapot_door = true;
         });
+        */
     }
 
     make_control_panel() {
@@ -380,7 +406,7 @@ export class Castle_of_shadows extends Simulation {
         //         Mat4.translation(light_position[0], light_position[1], light_position[2]).times(Mat4.scale(0.1,0.1,0.1)),
         //         this.light_src.override({color: light_color}));
         // }
-
+/*
         for (let i of [-1, 1]) { // Spin the 3D model shapes as well.
             const model_transform = Mat4.translation(2 * i, 3, 0)
                 .times(Mat4.rotation(t / 1000, -1, 2, 0))
@@ -399,7 +425,7 @@ export class Castle_of_shadows extends Simulation {
         let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5));
         let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8));
         let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33));
-      
+
 
         this.shapes.floor.draw(context, program_state, model_trans_floor, shadow_pass? this.floor : this.pure);
         this.shapes.floor.draw(context, program_state, model_trans_ceil, shadow_pass? this.floor : this.pure);
@@ -409,7 +435,8 @@ export class Castle_of_shadows extends Simulation {
         this.shapes.cube.draw(context, program_state, model_trans_wall_3, shadow_pass? this.floor : this.pure);
         this.shapes.cube.draw(context, program_state, Mat4.translation(0, 1, 0).times(Mat4.identity()), shadow_pass? this.floor : this.pure);
 
-        //const planet_position = program_state.camera_transform.times(vec4(0, 0, 0, 1)); 
+
+        //const planet_position = program_state.camera_transform.times(vec4(0, 0, 0, 1));
 
         //this.light_position = Mat4.translation(0,0,0).times(planet_position);
         //this.shapes.cube.draw(context, program_state, Mat4.translation(0,0,1).times(planet_position), shadow_pass? this.floor : this.pure);
@@ -436,6 +463,7 @@ export class Castle_of_shadows extends Simulation {
             let door_transform = Mat4.translation(5, 1.5, 10).times(Mat4.scale(0.25, 3, 1));
             this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
         }
+*/
 
         //let agent_trans = Mat4.translation(this.agent_pos[0], this.agent_pos[1], this.agent_pos[2]).
         //times(Mat4.scale(this.agent_size,this.agent_size,this.agent_size));
@@ -447,6 +475,8 @@ export class Castle_of_shadows extends Simulation {
         //this.agent_pos = program_state.camera_transform
         //console.log("cam trans");
         this.agent_pos = program_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+        //this.agent_body = new Body(this.agent.draw(context, program_state, agent_trans, shadow_pass? this.mon : this.pure));
     
         if (this.attached){
             if (this.attached() != null){
@@ -478,11 +508,69 @@ export class Castle_of_shadows extends Simulation {
         //this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
         
         let model_transform = Mat4.identity();
-        this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
-        this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
+        //this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
+        //this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
     
     
         this.item_sys.draw_items(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass);
+
+    //Gate Room
+
+        //Walls
+
+        let gr_wall1 = gate_room_base_transform.times(Mat4.translation(7.5, 1.5, 0)).times(Mat4.scale(0.25, 1.5, 7.5));
+        let gr_wall2 = gr_wall1.times(Mat4.translation(-60, 0, 0));
+        let gr_wall3 = gate_room_base_transform.times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.translation(7.5, 1.5, 0)).times(Mat4.scale(0.25, 1.5, 7.5));
+
+        let gr_wall4 = gate_room_base_transform.times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.translation(-7.5, 1.5, -4.5)).times(Mat4.scale(0.25, 1.5, 3));
+        let gr_wall5 = gr_wall4.times(Mat4.translation(0, 0, 3));
+
+        let gr_wall6 = gr_wall4.times(Mat4.translation(40, 0, 0));
+        let gr_wall7 = gr_wall5.times(Mat4.translation(40, 0, 0));
+
+        this.shapes.cube.draw(context, program_state, gr_wall1, shadow_pass? this.Wall : this.pure);
+        this.shapes.cube.draw(context, program_state, gr_wall2, shadow_pass? this.Wall : this.pure);
+        this.shapes.cube.draw(context, program_state, gr_wall3, shadow_pass? this.Wall : this.pure);
+
+        this.shapes.cube.draw(context, program_state, gr_wall4, shadow_pass? this.Wall : this.pure);
+        this.shapes.cube.draw(context, program_state, gr_wall5, shadow_pass? this.Wall : this.pure);
+
+        this.shapes.cube.draw(context, program_state, gr_wall6, shadow_pass? this.Wall : this.pure);
+        this.shapes.cube.draw(context, program_state, gr_wall7, shadow_pass? this.Wall : this.pure);
+
+        //Floor and Ceiling
+
+        let gr_floor = gate_room_base_transform.times(Mat4.translation(0, 0, 0)).times(Mat4.scale(7.5, 0.01, 7.5));
+        let gr_ceil = gr_floor.times(Mat4.translation(0, 300, 0));
+
+        this.shapes.cube.draw(context, program_state, gr_floor, shadow_pass? this.floor : this.pure);
+        this.shapes.cube.draw(context, program_state, gr_ceil, shadow_pass? this.Wall : this.pure);
+
+        //Gate
+
+        if (!gate_open) {
+            let gr_bar_transform = gate_room_base_transform.times(Mat4.translation(0, 1.5, -2.5)).times(Mat4.scale(0.025, 1.5, 0.025));
+
+            for (let bar_pos = -1.125; bar_pos <= 1.125; bar_pos += 0.375) {
+                this.shapes.cube.draw(context, program_state, gr_bar_transform.times(Mat4.translation(bar_pos * 40, 0, 0)), shadow_pass ? this.bar : this.pure);
+            }
+        }
+
+        //Button
+
+        let gr_button = gate_room_base_transform.times(Mat4.translation(-3.75, 0, 0)).times(Mat4.scale(0.5, 0.1, 0.5));
+
+        this.shapes.cube.draw(context, program_state, gr_button, shadow_pass? this.Wall : this.pure);
+
+        if (gate_open) {
+            let button_box = gate_room_base_transform.times(Mat4.translation(-3.75, 0.25, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.125, 0.125, 0.125));
+            this.shapes.cube.draw(context, program_state, button_box, shadow_pass? this.wood_door : this.pure);
+        }
+
+        //Table
+
+        let gr_table = gate_room_base_transform.times(Mat4.translation(-3, 0, -5));
+        this.shapes.table.draw(context, program_state, gr_table, shadow_pass? this.wood : this.pure);
     }
 
     display(context, program_state) {

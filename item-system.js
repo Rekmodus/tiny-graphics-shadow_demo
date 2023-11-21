@@ -82,7 +82,7 @@ export class Item {
     static Debug= 0;
     static Flashlight = 1;
     static Key = 2;
-    static Skull = 3;
+    static Box = 3;
 
     constructor(ID, model, transform, material) {
         Object.assign(this, {
