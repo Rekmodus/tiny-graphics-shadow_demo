@@ -9,9 +9,9 @@ const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivisio
 import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
-import { walls, triggers } from './Walls.js';
+import { walls, triggers, doors } from './Walls.js';
 //import {open_teapot_door} from './castle-of-shadows.js';
-import {gate_open} from './castle-of-shadows.js';
+import {gate_open, open_skull_door, open_hall_door} from './castle-of-shadows.js';
 
 let monster_trigger = false;
 export {monster_trigger};
@@ -312,7 +312,7 @@ export class Movement_Controls_2 extends Scene {
         }
 
         
-        check_wall_collisions(w, graphics_state, triggers){
+        check_wall_collisions(w, graphics_state, triggers, doors){
             const playerSize = vec3(1.5, 1.5, 1.5); // Adjust the size of the player
 
             //check triggers
@@ -349,6 +349,32 @@ export class Movement_Controls_2 extends Scene {
                         monster_trigger = false;
                     }
 
+                }
+            }
+            for (let i = 0; i < doors.length; i++) {
+                const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+                let door = doors[i];
+
+                if (i === 0 && open_skull_door) {continue;}
+                if (i === 1 && open_hall_door) {continue;}
+
+                const minExtent = door.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
+                const maxExtent = door.times(vec4(1, 1, 1, 1.0)).to3();
+
+
+                const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
+                const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
+
+                // Simple AABB collision
+                if (
+                    playerPosition[0] >= adjustedMinExtent[0] && playerPosition[0] <= adjustedMaxExtent[0] &&
+                    playerPosition[2] >= adjustedMinExtent[2] && playerPosition[2] <= adjustedMaxExtent[2]
+                ) {
+                    // Collision detected with wall[i]
+                    console.log("Collision with door " + i);
+
+                    return true;
                 }
             }
 
@@ -450,7 +476,7 @@ export class Movement_Controls_2 extends Scene {
             //console.log("cam z?" + this.z_axis);
 
             // Try to move player. If collide then move player back!
-            if (this.check_wall_collisions(walls, graphics_state, triggers)){
+            if (this.check_wall_collisions(walls, graphics_state, triggers, doors)){
                 // Move in first-person.  Scale the normal camera aiming speed by dt for smoothness:
                 this.first_person_flyaround(0, dt * m * -1);
             }

@@ -15,14 +15,17 @@ const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, S
 
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
-//let open_teapot_door = false;
-//export {open_teapot_door};
+let open_skull_door = false;
+export {open_skull_door};
 
 let gate_open = false;
 export {gate_open};
 
 let skull_drop = false;
 export {skull_drop};
+
+let open_hall_door = false;
+export {open_hall_door};
 
 const gate_room_base_transform = Mat4.identity();
 
@@ -321,54 +324,67 @@ export class Castle_of_shadows extends Simulation {
             let key_transform = this.room3_parent.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
             this.item_sys.create_item(Item.Debug, this.shapes.key, key_transform, this.Key);
             
-            // interations
-            // this.interact_sys.create_interaction(room3_parent.times(Mat4.translation(-3.75, 0, 0)), (interaction) => {
-            //     if (!this.item_sys.player_holds(Item.Debug)) {return}
-    
-            //     //this.item_sys.destroy(this.item_sys.held_item);
-            //     this.interact_sys.destroy(interaction);
-            //     skull_drop = true;
-            // })
+            this.interact_sys.create_interaction(gate_room_base_transform.times(Mat4.translation(5, 1, 10)), (interaction) => {
+                if (!this.item_sys.player_holds(Item.Debug)) {
+                    console.log("Skull Door is locked");
+                    return;
+                }
+                console.log("You unlocked the skull door");
+                this.item_sys.destroy(this.item_sys.held_item);
+                this.interact_sys.destroy(interaction);
+                open_skull_door = true;
+            });
+
+            this.interact_sys.create_interaction(this.room3_parent.times(Mat4.translation(8, 1, 14).times(Mat4.scale(1.5, 5, 0.25))), (interaction) => {
+                if (!this.item_sys.player_holds(Item.Key)) {
+                    console.log("Door is locked");
+                    return;
+                }
+                console.log("You unlocked the door");
+                this.item_sys.destroy(this.item_sys.held_item);
+                this.interact_sys.destroy(interaction);
+                open_hall_door = true;
+            });
         }
     }
 
     make_control_panel() {
         // make_control_panel(): Sets up a panel of interactive HTML elements, including
         // buttons with key bindings for affecting this scene, and live info readouts.
-        this.control_panel.innerHTML += "Test control panel!!: ";
+        this.control_panel.innerHTML += "Controls";
         // The next line adds a live text readout of a data member of our Scene.
         // this.live_string(box => {
         //     box.textContent = (this.hover ? 0 : (this.t % (2 * Math.PI)).toFixed(2)) + " radians"
         // });
-        this.new_line();
+        // this.new_line();
         this.new_line();
         // Add buttons so the user can actively toggle data members of our Scene:
         this.key_triggered_button("Toggle_Light", ["f"], function () {
             this.hover ^= 1;
         });
-        this.new_line();
-        this.key_triggered_button("Bouncy", ["b"], function () {
-            this.swarm ^= 1;
-        });
+        // this.new_line();
+        // this.key_triggered_button("Bouncy", ["b"], function () {
+        //     this.swarm ^= 1;
+        // });
         this.new_line();
         this.key_triggered_button("ShadowView", ["l"], function () {
             this.shadowView ^= 1;
         });
         this.new_line();
-        this.key_triggered_button("Foward", ["Shift", "W"],
-            () => this.control.w = true, '#6E6460', () => this.control.w = false);
-        this.key_triggered_button("Back",   ["Shift", "S"],
-            () => this.control.s = true, '#6E6460', () => this.control.s = false);
-        this.key_triggered_button("Left",   ["Shift", "A"],
-            () => this.control.a = true, '#6E6460', () => this.control.a = false);
-        this.key_triggered_button("Right",  ["Shift", "D"],
-            () => this.control.d = true, '#6E6460', () => this.control.d = false);
-        this.key_triggered_button("Look_Right",  ["e"],
-            () => this.control.e = true, '#6E6460', () => this.control.e = false);
-        this.key_triggered_button("Speed Up",  [" "],
-            () => this.control.space = true, '#6E6460', () => this.control.space = false);
-            this.new_line();
-            this.key_triggered_button("Attach to object", ["1"], () => this.attached = () => this.moon);
+        // this.key_triggered_button("Foward", ["Shift", "W"],
+        //     () => this.control.w = true, '#6E6460', () => this.control.w = false);
+        // this.key_triggered_button("Back",   ["Shift", "S"],
+        //     () => this.control.s = true, '#6E6460', () => this.control.s = false);
+        // this.key_triggered_button("Left",   ["Shift", "A"],
+        //     () => this.control.a = true, '#6E6460', () => this.control.a = false);
+        // this.key_triggered_button("Right",  ["Shift", "D"],
+        //     () => this.control.d = true, '#6E6460', () => this.control.d = false);
+        // this.key_triggered_button("Look_Right",  ["e"],
+        //     () => this.control.e = true, '#6E6460', () => this.control.e = false);
+        // this.key_triggered_button("Speed Up",  [" "],
+        //     () => this.control.space = true, '#6E6460', () => this.control.space = false);
+        //     this.new_line();
+        //     this.key_triggered_button("Attach to object", ["1"], () => this.attached = () => this.moon);
 
         this.key_triggered_button("Interact", ["e"], this.on_interact, undefined);
 
@@ -675,6 +691,16 @@ export class Castle_of_shadows extends Simulation {
                 // hide under the floor but still draw (for performance)
                 this.shapes.monster.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, -10, 15)).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
 
+            }
+
+            if (!open_skull_door) {
+                let door_transform = Mat4.translation(5, 1.5, 10).times(Mat4.scale(0.25, 3, 1));
+                this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
+            }
+
+            if (!open_hall_door) {
+                let door_transform = this.room3_parent.times(Mat4.translation(8, 1, 14)).times(Mat4.scale(1.5, 5, 0.25));
+                this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
             }
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall1), shadow_pass? this.floor : this.pure);
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall2), shadow_pass? this.floor : this.pure);

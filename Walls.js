@@ -82,15 +82,26 @@ for (const [key, value] of Object.entries(room3_collision)) {
     walls.push(room3_parent.times(value));
 }
 
+
+
 export { walls};
 
 let triggers = [];
 
 
 let trigger_mon = Mat4.translation(8, 2, 0);
-let end_trigger_mon = Mat4.translation(8, 2, 10);
+let end_trigger_mon = Mat4.translation(8, 2, 12);
 
 triggers.push(room3_parent.times(trigger_mon));
 triggers.push(room3_parent.times(end_trigger_mon));
 
 export { triggers};
+
+let doors = [];
+
+let door1_transform = Mat4.translation(5, 1, 10).times(Mat4.scale(0.25, 2, 1));
+let door2_transform = room3_parent.times(Mat4.translation(8, 1, 14)).times(Mat4.scale(1.5, 5, 0.25));
+doors.push(door1_transform);
+doors.push(door2_transform);
+
+export {doors};
