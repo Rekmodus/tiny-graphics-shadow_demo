@@ -247,30 +247,26 @@ export class Castle_of_shadows extends Simulation {
 
 //Item System
 
-        this.item_sys = new Item_System();
-
         //let model_transform = Mat4.translation(5, 1.5, 0).times(Mat4.rotation(-Math.PI/2, 1, 0, 0));
 
-        this.item_sys.held_item = this.item_sys.create_item(Item.Flashlight, this.shapes.Flashlight, Mat4.identity(), this.flash);
+        Item_System.held_item = Item_System.create_item(Item.Flashlight, this.shapes.Flashlight, Mat4.identity(), this.flash);
 
         let box_transform = gate_room_base_transform.times(Mat4.translation(0, 0.125, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
         let key_transform = gate_room_base_transform.times(Mat4.translation(-3, 0.75, -5)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
 
-        this.item_sys.create_item(Item.Box, this.shapes.cube, box_transform, this.wood_door);
-        this.item_sys.create_item(Item.Key, this.shapes.key, key_transform, this.Key);
+        Item_System.create_item(Item.Box, this.shapes.cube, box_transform, this.wood_door);
+        Item_System.create_item(Item.Key, this.shapes.key, key_transform, this.Key);
 
         //this.item_sys.create_item(Item.Debug, this.shapes.cube, Mat4.translation(0, 1, 10), this.wood);
         //this.item_sys.create_item(Item.Key, this.shapes.teapot, model_transform, this.wood);
 
 //Interaction System
 
-        this.interact_sys = new Interaction_System();
+        Interaction_System.create_interaction(gate_room_base_transform.times(Mat4.translation(-3.75, 0, 0)), (interaction) => {
+            if (!Item_System.player_holds(Item.Box)) {return}
 
-        this.interact_sys.create_interaction(gate_room_base_transform.times(Mat4.translation(-3.75, 0, 0)), (interaction) => {
-            if (!this.item_sys.player_holds(Item.Box)) {return}
-
-            this.item_sys.destroy(this.item_sys.held_item);
-            this.interact_sys.destroy(interaction);
+            Item_System.destroy(Item_System.held_item);
+            Interaction_System.destroy(interaction);
             gate_open = true;
         })
 
@@ -322,27 +318,27 @@ export class Castle_of_shadows extends Simulation {
 
             // Key
             let key_transform = this.room3_parent.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
-            this.item_sys.create_item(Item.Debug, this.shapes.key, key_transform, this.Key);
-            
-            this.interact_sys.create_interaction(gate_room_base_transform.times(Mat4.translation(5, 1, 10)), (interaction) => {
-                if (!this.item_sys.player_holds(Item.Debug)) {
+            Item_System.create_item(Item.Debug, this.shapes.key, key_transform, this.Key);
+
+            Interaction_System.create_interaction(gate_room_base_transform.times(Mat4.translation(5, 1, 10)), (interaction) => {
+                if (!Item_System.player_holds(Item.Debug)) {
                     console.log("Skull Door is locked");
                     return;
                 }
                 console.log("You unlocked the skull door");
-                this.item_sys.destroy(this.item_sys.held_item);
-                this.interact_sys.destroy(interaction);
+                Item_System.destroy(Item_System.held_item);
+                Interaction_System.destroy(interaction);
                 open_skull_door = true;
             });
 
-            this.interact_sys.create_interaction(this.room3_parent.times(Mat4.translation(8, 1, 14).times(Mat4.scale(1.5, 5, 0.25))), (interaction) => {
-                if (!this.item_sys.player_holds(Item.Key)) {
+            Interaction_System.create_interaction(this.room3_parent.times(Mat4.translation(8, 1, 14).times(Mat4.scale(1.5, 5, 0.25))), (interaction) => {
+                if (!Item_System.player_holds(Item.Key)) {
                     console.log("Door is locked");
                     return;
                 }
                 console.log("You unlocked the door");
-                this.item_sys.destroy(this.item_sys.held_item);
-                this.interact_sys.destroy(interaction);
+                Item_System.destroy(Item_System.held_item);
+                Interaction_System.destroy(interaction);
                 open_hall_door = true;
             });
         }
@@ -392,8 +388,8 @@ export class Castle_of_shadows extends Simulation {
 
     on_interact() {
         // Called when interact button is pressed
-        this.item_sys.pick_up_item();
-        this.interact_sys.interact();
+        Item_System.pick_up_item();
+        Interaction_System.interact();
     }
 
     texture_buffer_init(gl) {
@@ -596,9 +592,9 @@ export class Castle_of_shadows extends Simulation {
         let model_transform = Mat4.identity();
         //this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
         //this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
-    
-    
-        this.item_sys.draw_items(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass);
+
+
+        Item_System.draw_items(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass);
 
     //Gate Room
 
@@ -778,7 +774,7 @@ export class Castle_of_shadows extends Simulation {
         
         this.light_field_of_view = 90 * Math.PI / 180; // 130 degree
         program_state.lights = [new Light(this.light_position, this.light_color, 0)];
-        if(this.item_sys.player_holds(Item.Flashlight)){
+        if(Item_System.player_holds(Item.Flashlight)){
             if(!this.hover){
                 program_state.lights = [new Light(this.light_position, this.light_color, 1000)];
             }else{
@@ -825,8 +821,8 @@ export class Castle_of_shadows extends Simulation {
             );            
         }
 
-        this.item_sys.update_item_in_range(program_state.camera_transform);
-        this.interact_sys.update_interact_in_range(program_state.camera_transform);
+        Item_System.update_item_in_range(program_state.camera_transform);
+        Interaction_System.update_interact_in_range(program_state.camera_transform);
     }
 
     update_state(dt) {
@@ -834,7 +830,7 @@ export class Castle_of_shadows extends Simulation {
         // scene should do to its bodies every frame -- including applying forces.
         // Generate additional moving bodies if there ever aren't enough:
         // //console.log("Hello world");
-        if (this.item_sys.player_holds(Item.Debug)){
+        if (Item_System.player_holds(Item.Debug)){
             skull_drop = true;
         }
    

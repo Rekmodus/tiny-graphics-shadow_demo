@@ -4,27 +4,26 @@ import {Color_Phong_Shader} from './examples/shadow-demo-shaders.js';
 const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
 
 export class Item_System {
-    // An Item_System class should be created at the beginning of the scene
+    // Handles item creation, and picking
 
-    world_item_scale = 0.25;
-    pickup_radius = 2;
+    static world_item_scale = 0.25;
+    static pickup_radius = 2;
 
-    constructor() {
-        this.pure = new Material(new Color_Phong_Shader(), {});
-    }
+    static pure = new Material(new Color_Phong_Shader(), {});
 
-    item_list = [];
-    item_in_range;
-    held_item;
+    static item_list = [];
+    static item_in_range;
+    static held_item;
 
-    create_item(itemID, model, transform, material) {
+    static create_item(itemID, model, transform, material) {
         // Adds items to scene, should only be called at the start of the scene
         // Returns the item added
-        this.item_list.push(new Item(itemID, model, transform, material));
+        let item = new Item(itemID, model, transform, material);
+        this.item_list.push(item);
         return this.item_list[this.item_list.length - 1];
     }
 
-    draw_items(context, program_state, hand_transform, shadow_pass) {
+    static draw_items(context, program_state, hand_transform, shadow_pass) {
         // Draws all items, should be called during rendering passes
         // hand_transform is the transform needed to make the object appear to be held (i.e. the flashlight's transform)
         // shadow_pass indicates whether the object should use it's usual material or pure
@@ -34,7 +33,7 @@ export class Item_System {
         }
     }
 
-    update_item_in_range(camera_transform) {
+    static update_item_in_range(camera_transform) {
         // Finds an item in pickup range and stores it in item_in_range, stores null if no items are in range
         // Should be called every frame
         for (let i of this.item_list) {
@@ -47,7 +46,7 @@ export class Item_System {
         this.item_in_range = null;
     }
 
-    pick_up_item() {
+    static pick_up_item() {
         // Swaps the currently held item with item_in_range
         // Currently called by the on_interact method in test.js
         if (this.item_in_range == null) {return}
@@ -56,13 +55,13 @@ export class Item_System {
         this.held_item = this.item_in_range;
     }
 
-    player_holds(itemID) {
+    static player_holds(itemID) {
         // Checks if the player holds an item of a specific type
         if (this.held_item == null) {return false;}
         return this.held_item.ID === itemID;
     }
 
-    destroy(item) {
+    static destroy(item) {
         // Removes an item from the scene
         if (item == null || this.item_list.length === 0) {return}
 
