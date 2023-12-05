@@ -3,6 +3,7 @@ import {defs, tiny} from './examples/common.js';
 import {Body, Test_Data} from "./examples/collisions-demo.js";
 import {Item_System, Item} from "./item-system.js";
 import {Interaction_System} from "./interaction-system.js";
+import {Room_Builder} from "./room-builder.js";
 import {Movement_Controls_2} from './first-person-controller.js' 
 import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader } from './shaders.js';
 import {Shape_From_File} from './examples/obj-file-demo.js'
@@ -283,6 +284,19 @@ export class Castle_of_shadows extends Simulation {
             open_teapot_door = true;
         });
         */
+
+//Room Test
+
+        let room1 = Room_Builder.create_room(Mat4.translation(5, 0, 20));
+
+        room1.create_wall_x(0, 0, 4, 3, this.Wall);
+        room1.create_wall_x(0, 10, 4, 3, this.Wall);
+        room1.create_wall_z(2, 5, 10, 3, this.Wall);
+
+        room1.create_wall_z(-2, 5, 2, 2, this.Wall);
+
+        room1.create_floor_ceil(0, 5, 4, 10, 3, this.floor);
+
 
 //Room 3
         {
@@ -595,6 +609,7 @@ export class Castle_of_shadows extends Simulation {
 
 
         Item_System.draw_items(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass);
+        Room_Builder.draw(context, program_state, shadow_pass);
 
     //Gate Room
 
