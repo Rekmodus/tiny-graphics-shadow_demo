@@ -294,11 +294,24 @@ export class Castle_of_shadows extends Simulation {
         room1.create_wall_x(0, 0, 4, 3, this.Wall);
         room1.create_wall_x(0, 10, 4, 3, this.Wall);
         room1.create_wall_z(2, 5, 10, 3, this.Wall);
-
         room1.create_wall_z(-2, 5, 2, 2, this.Wall);
+        room1.create_wall_z(-2, 1, 2, 3, this.Wall);
 
         room1.create_floor_ceil(0, 5, 4, 10, 3, this.floor);
 
+        room1.create_obj(this.shapes.table, Mat4.translation(0, 0, 5), this.wood);
+
+        let test_key_transform = Mat4.translation(0, 0.75, 5).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
+        room1.create_item(Item.Key, this.shapes.key, test_key_transform, this.Key);
+
+        room1.create_door_z(-2, 3, 2, 3, this.wood_door, (door) => {
+            if (!Item_System.player_holds(Item.Key)) {return;}
+            door.open = true;
+            Item_System.destroy(Item_System.held_item);
+        });
+
+        let trigger = Mat4.translation(0, 0, 5).times(Mat4.scale(1, 1, 2));
+        room1.create_trigger(trigger, () => {console.log("Trigger!");});
 
 //Room 3
         {

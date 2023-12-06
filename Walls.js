@@ -105,3 +105,9 @@ doors.push(door1_transform);
 doors.push(door2_transform);
 
 export {doors};
+
+let _doors = [];
+export {_doors};
+
+let _triggers = [];
+export {_triggers};

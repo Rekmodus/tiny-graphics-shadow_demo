@@ -9,7 +9,7 @@ const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivisio
 import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
-import { walls, triggers, doors } from './Walls.js';
+import { walls, triggers, doors, _triggers, _doors } from './Walls.js';
 //import {open_teapot_door} from './castle-of-shadows.js';
 import {gate_open, open_skull_door, open_hall_door} from './castle-of-shadows.js';
 
@@ -315,6 +315,21 @@ export class Movement_Controls_2 extends Scene {
         check_wall_collisions(w, graphics_state, triggers, doors){
             const playerSize = vec3(1.5, 1.5, 1.5); // Adjust the size of the player
 
+            function AABB(transform, playerPos) {
+                const minExtent = transform.times(vec4(-1, -1, -1, 1.0)).to3();  // Assuming the center of the wall is at (0,0,0)
+                const maxExtent = transform.times(vec4(1, 1, 1, 1.0)).to3();
+
+                const adjustedMinExtent = minExtent.minus(playerSize.times(0.5));
+                const adjustedMaxExtent = maxExtent.plus(playerSize.times(0.5));
+
+                // Simple AABB collision
+                if (
+                    playerPos[0] >= adjustedMinExtent[0] && playerPos[0] <= adjustedMaxExtent[0] &&
+                    playerPos[2] >= adjustedMinExtent[2] && playerPos[2] <= adjustedMaxExtent[2]
+                ) {return true;}
+                return false
+            }
+
             //check triggers
             for (let i = 0; i < triggers.length; i++) {
                 const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
@@ -351,6 +366,13 @@ export class Movement_Controls_2 extends Scene {
 
                 }
             }
+            for (let t of _triggers) {
+                const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+                if (AABB(t.transform, playerPosition))
+                    t.callback();
+            }
+
             for (let i = 0; i < doors.length; i++) {
                 const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
 
@@ -376,6 +398,12 @@ export class Movement_Controls_2 extends Scene {
 
                     return true;
                 }
+            }
+            for (let d of _doors) {
+                const playerPosition = graphics_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
+
+                if (d.open) {continue;}
+                if (AABB(d.transform, playerPosition)) {return true;}
             }
 
             for (let i = 0; i < w.length; i++) {
