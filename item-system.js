@@ -7,7 +7,8 @@ export class Item_System {
     // Handles item creation, and picking
 
     static world_item_scale = 0.25;
-    static pickup_radius = 2;
+    static player_pickup_radius = 3; //Radius around player in which they can pick up items
+    static item_radius = 0.25; //Radius around item which cursor must be inside to pick it up
 
     static pure = new Material(new Color_Phong_Shader(), {});
 
@@ -33,12 +34,22 @@ export class Item_System {
         }
     }
 
-    static update_item_in_range(camera_transform) {
+    static update_item_in_range(context, program_state, mouse_ray) {
         // Finds an item in pickup range and stores it in item_in_range, stores null if no items are in range
         // Should be called every frame
         for (let i of this.item_list) {
-            let itemPos = Mat4.inverse(camera_transform).times(i.transform.times(vec4(0, 0, 0, 1))).to3();
-            if (i !== this.held_item && itemPos.dot(itemPos) <= this.pickup_radius * this.pickup_radius) {
+            //let itemPos = Mat4.inverse(camera_transform).times(i.transform.times(vec4(0, 0, 0, 1))).to3();
+            //if (i !== this.held_item && itemPos.dot(itemPos) <= this.pickup_radius * this.pickup_radius) {
+                //this.item_in_range = i;
+                //return;
+            //}
+
+            let itemPos = Mat4.inverse(program_state.camera_transform).times(i.transform.times(vec4(0, 0, 0, 1))).to3();
+            if (i === this.held_item || itemPos.dot(itemPos) > this.player_pickup_radius * this.player_pickup_radius)
+                continue;
+
+            let dist_vec = mouse_ray.times(itemPos.dot(mouse_ray) / mouse_ray.dot(mouse_ray)).minus(itemPos);
+            if (itemPos.dot(mouse_ray) > 0 && dist_vec.dot(dist_vec) <= this.item_radius * this.item_radius) {
                 this.item_in_range = i;
                 return;
             }
@@ -89,3 +100,43 @@ export class Item {
         });
     }
 }
+
+/*
+my_mouse_down(e, pos, context, program_state) {
+        let pos_ndc_near = vec4(pos[0], pos[1], -1.0, 1.0);
+        let pos_ndc_far  = vec4(pos[0], pos[1],  1.0, 1.0);
+        let center_ndc_near = vec4(0.0, 0.0, -1.0, 1.0);
+        let P = program_state.projection_transform;
+        let V = program_state.camera_inverse;
+        let pos_world_near = Mat4.inverse(P.times(V)).times(pos_ndc_near);
+        let pos_world_far  = Mat4.inverse(P.times(V)).times(pos_ndc_far);
+        let center_world_near  = Mat4.inverse(P.times(V)).times(center_ndc_near);
+        pos_world_near.scale_by(1 / pos_world_near[3]);
+        pos_world_far.scale_by(1 / pos_world_far[3]);
+        center_world_near.scale_by(1 / center_world_near[3]);
+
+        let mouse_ray = pos_world_far.minus(center_world_near).normalized();
+        return Mat4.inverse(program_state.camera_transform).times(mouse_ray).to3();
+
+        }
+
+        this.animation_queue.push(animation_bullet)
+    }
+
+    let canvas = context.canvas;
+
+    const mouse_position = (e, rect = canvas.getBoundingClientRect()) =>
+                vec((e.clientX - (rect.left + rect.right) / 2) / ((rect.right - rect.left) / 2),
+                    (e.clientY - (rect.bottom + rect.top) / 2) / ((rect.top - rect.bottom) / 2));
+
+            canvas.addEventListener("mousedown", e => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect()
+                console.log("e.clientX: " + e.clientX);
+                console.log("e.clientX - rect.left: " + (e.clientX - rect.left));
+                console.log("e.clientY: " + e.clientY);
+                console.log("e.clientY - rect.top: " + (e.clientY - rect.top));
+                console.log("mouse_position(e): " + mouse_position(e));
+                this.my_mouse_down(e, mouse_position(e), context, program_state);
+            });
+ */

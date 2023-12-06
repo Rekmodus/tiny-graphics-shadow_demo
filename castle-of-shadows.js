@@ -53,6 +53,8 @@ const Square =
 
 // The scene
 export class Castle_of_shadows extends Simulation {
+
+    mouse_ray = vec3(0, 0, 0);
     constructor() {
         super();
 
@@ -749,6 +751,15 @@ export class Castle_of_shadows extends Simulation {
                 vec3(0, 1.9, 0),
                 vec3(0, 1, 0)
             )); // Locate the camera here
+
+            //Get mouse ray
+            context.canvas.addEventListener("mousemove", e => {
+                e.preventDefault();
+                let r = context.canvas.getBoundingClientRect();
+                let mouse_pos = vec4((2 * e.clientX - r.left - r.right) / (r.right - r.left),
+                                     (2 * e.clientY - r.bottom - r.top) / (r.top - r.bottom), 1, 1);
+                this.mouse_ray = Mat4.inverse(program_state.projection_transform).times(mouse_pos).to3().normalized();
+            });
         }
 
         if(Math.abs(this.children[0].thrust[0]) > 0 || Math.abs(this.children[0].thrust[1]) > 0 || Math.abs(this.children[0].thrust[2]) > 0){
@@ -836,7 +847,7 @@ export class Castle_of_shadows extends Simulation {
             );            
         }
 
-        Item_System.update_item_in_range(program_state.camera_transform);
+        Item_System.update_item_in_range(context, program_state, this.mouse_ray);
         Interaction_System.update_interact_in_range(program_state.camera_transform);
     }
 
