@@ -12,6 +12,7 @@ import {Control_Demo} from "./examples/control-demo.js"
 import {Mouse_Demo} from "./examples/mouse-demo.js"
 import {Team_project} from "./test.js"
 import {Castle_of_shadows} from "./castle-of-shadows.js"
+import {DebugScene} from "./debug_scene.js"
 
 // Pull these names into this module's scope for convenience:
 const {
@@ -42,6 +43,7 @@ Object.assign(defs,
     {Mouse_Demo},
     {Control_Demo},
     {Team_project},
+    {DebugScene},
     {Castle_of_shadows});
 
 // ******************** End extra step
@@ -51,6 +53,6 @@ Object.assign(defs,
  const Main_Scene = Castle_of_shadows;
 //const Main_Scene = Mouse_Demo;
 //const Main_Scene = Shadow_Demo;
-const Additional_Scenes = [];
+const Additional_Scenes = [DebugScene];
 
 export {Main_Scene, Additional_Scenes, Canvas_Widget, Code_Widget, Text_Widget, defs}

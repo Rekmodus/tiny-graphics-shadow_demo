@@ -165,7 +165,7 @@ export class Movement_Controls_2 extends Scene {
             //this.new_line();
             this.key_triggered_button("(Un)freeze mouse look around", ["g"], () => this.look_around_locked ^= 1, "#8B8885");
             this.new_line();
-            this.key_triggered_button("Toggle FPS look around", ["0"], () => this.fps_look ^= 1, "#8B8885");
+            this.key_triggered_button("Lock mouse to center", ["0"], () => this.fps_look ^= 1, "#8B8885");
             this.new_line();
             this.key_triggered_button("Door", ["9"], () => this.door1 ^= 1, "#8B8885");
             this.new_line();

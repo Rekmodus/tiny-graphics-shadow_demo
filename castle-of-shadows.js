@@ -7,9 +7,11 @@ import {Room_Builder} from "./room-builder.js";
 import {Movement_Controls_2} from './first-person-controller.js' 
 import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader } from './shaders.js';
 import {Shape_From_File} from './examples/obj-file-demo.js'
+import {Text_Line} from './examples/text-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
 import {monster_trigger} from './first-person-controller.js'
+import { Text_System } from './text-system.js';
 
 // Pull these names into this module's scope for convenience:
 const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
@@ -77,6 +79,7 @@ export class Castle_of_shadows extends Simulation {
             "cube": new Cube(),
             "floor": new Cube(),
             "square_2d": new Square(),
+            text: new Text_Line(35)
         };
         this.shapes.floor.arrays.texture_coord.forEach(p => p.scale_by(4*5));
 
@@ -270,6 +273,7 @@ export class Castle_of_shadows extends Simulation {
 
             Item_System.destroy(Item_System.held_item);
             Interaction_System.destroy(interaction);
+            Text_System.typewriter_animation(this.insight_text, "The gate has opened");
             gate_open = true;
         })
 
@@ -352,9 +356,11 @@ export class Castle_of_shadows extends Simulation {
             Interaction_System.create_interaction(gate_room_base_transform.times(Mat4.translation(5, 1, 10)), (interaction) => {
                 if (!Item_System.player_holds(Item.Debug)) {
                     console.log("Skull Door is locked");
+                    Text_System.typewriter_animation(this.insight_text, "Door is locked");
                     return;
                 }
                 console.log("You unlocked the skull door");
+                Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
                 Item_System.destroy(Item_System.held_item);
                 Interaction_System.destroy(interaction);
                 open_skull_door = true;
@@ -363,14 +369,22 @@ export class Castle_of_shadows extends Simulation {
             Interaction_System.create_interaction(this.room3_parent.times(Mat4.translation(8, 1, 14).times(Mat4.scale(1.5, 5, 0.25))), (interaction) => {
                 if (!Item_System.player_holds(Item.Key)) {
                     console.log("Door is locked");
+                    Text_System.typewriter_animation(this.insight_text, "Door is locked");
                     return;
                 }
                 console.log("You unlocked the door");
+                Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
                 Item_System.destroy(Item_System.held_item);
                 Interaction_System.destroy(interaction);
                 open_hall_door = true;
             });
         }
+
+// Text
+        //Text_System.create_text("The string", scale, xpos, ypos) 0,0 is the center of screen. outputs the index of the text in the text_list array
+        this.pickup_text = Text_System.create_text("", 1, -7, -15); 
+        this.insight_text = Text_System.create_text("", 0.7, -12, 20);
+        this.objective_text = Text_System.create_text("Objective: Escape", 0.5, -70, 38);
     }
 
     make_control_panel() {
@@ -392,7 +406,7 @@ export class Castle_of_shadows extends Simulation {
         //     this.swarm ^= 1;
         // });
         this.new_line();
-        this.key_triggered_button("ShadowView", ["l"], function () {
+        this.key_triggered_button("Show Z-buffer depth map", ["l"], function () {
             this.shadowView ^= 1;
         });
         this.new_line();
@@ -752,7 +766,6 @@ export class Castle_of_shadows extends Simulation {
                 return alert('need WEBGL_depth_texture');  // eslint-disable-line
             }
             this.texture_buffer_init(gl);
-
             this.init_ok = true;
         }
 
@@ -774,6 +787,8 @@ export class Castle_of_shadows extends Simulation {
                 this.mouse_ray = Mat4.inverse(program_state.projection_transform).times(mouse_pos).to3().normalized();
             });
         }
+
+        //context.convas.        document_element.innerHTML += "<h1>sample text!!</h1>";
 
         if(Math.abs(this.children[0].thrust[0]) > 0 || Math.abs(this.children[0].thrust[1]) > 0 || Math.abs(this.children[0].thrust[2]) > 0){
             this.moving = true;
@@ -859,9 +874,18 @@ export class Castle_of_shadows extends Simulation {
                 this.depth_tex.override({texture: this.lightDepthTexture})
             );            
         }
-
         Item_System.update_item_in_range(context, program_state, this.mouse_ray);
         Interaction_System.update_interact_in_range(program_state.camera_transform);
+
+        if (Item_System.item_in_range != null){
+            Text_System.update_text(this.pickup_text, "Pick up item");
+        }else if  ((Interaction_System.interact_in_range) != null){
+            Text_System.update_text(this.pickup_text, "  Interact  ");
+        }else{
+            Text_System.update_text(this.pickup_text, "");
+        }
+        
+        Text_System.draw_text(context, program_state); // draw the text after all rendering
     }
 
     update_state(dt) {
