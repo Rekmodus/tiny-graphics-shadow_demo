@@ -19,7 +19,7 @@ const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, S
 
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
-let open_skull_door = false;
+let open_skull_door = true;
 export {open_skull_door};
 
 let gate_open = false;
@@ -28,7 +28,7 @@ export {gate_open};
 let skull_drop = false;
 export {skull_drop};
 
-let open_hall_door = false;
+let open_hall_door = true;
 export {open_hall_door};
 
 let open_gate_number;
