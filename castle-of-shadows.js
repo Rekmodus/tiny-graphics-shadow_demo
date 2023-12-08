@@ -478,9 +478,10 @@ export class Castle_of_shadows extends Simulation {
 
             walls.push(this.room4_parent.times(Mat4.translation(-2, 0, -10.25).times(Mat4.scale(1.5, 1, 1.5))));
 
-            //Axe?
+            //Axe
 
-            room4.create_item(Item.Tool, this.shapes.axe, Mat4.translation(6, 0.125, -13.5).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(1, 1, 1)), this.axe);
+            room4.create_item(Item.Tool, this.shapes.axe, Mat4.translation(6, 0.625, -13.5).times(Mat4.rotation(-Math.PI/2 + 0.4, 1, 0, 0)).times(Mat4.scale(1, 1, 1)), this.axe);
+            room4.create_obj(this.shapes.skull, Mat4.translation(6, 0.125, -13.5).times(Mat4.rotation(0.4, 0, 1, 0)).times(Mat4.scale(1/8, 1/8, 1/8)), this.skull);
 
             //Breakable Wall
 
@@ -489,10 +490,28 @@ export class Castle_of_shadows extends Simulation {
                     Text_System.typewriter_animation(this.insight_text, "It looks fragile");
                     return;
                 }
-                Text_System.typewriter_animation(this.insight_text, "You break the wall");
+                Text_System.typewriter_animation(this.insight_text, "You break down the wall");
                 door.open = true;
                 Item_System.destroy(Item_System.held_item);
             });
+
+            //Decor
+
+            //Cell 4
+            room4.create_obj(this.shapes.chain, Mat4.translation(6, 1.5, -14.5).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)), this.Chain);
+
+            //Cell 3
+            room4.create_obj(this.shapes.skeleton, Mat4.translation(2.5, 0.125, -14).times(Mat4.rotation(-Math.PI/2 + 0.3, 0, 1, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5)), this.skeleton);
+
+            //Main Room
+            room4.create_obj(this.shapes.chain, Mat4.translation(-4, 2, -0.375).times(Mat4.rotation(Math.PI, 0, 1, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)), this.Chain);
+            room4.create_obj(this.shapes.chain, Mat4.translation(4, 2, -0.375).times(Mat4.rotation(Math.PI, 0, 1, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)), this.Chain);
+            room4.create_obj(this.shapes.barrel3, barrel_scale(Mat4.translation(-7, 0.5, -1)), this.barrel);
+            room4.create_obj(this.shapes.barrel1, barrel_scale(Mat4.translation(7, 0.5, -1)), this.barrel);
+            room4.create_obj(this.shapes.barrel1, barrel_scale(Mat4.translation(7, 0.5, -2)), this.barrel);
+            room4.create_obj(this.shapes.chain, Mat4.translation(7.625, 2, -6).times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)), this.Chain);
+            room4.create_obj(this.shapes.skull, Mat4.translation(7.5, 0.125, -6.5).times(Mat4.rotation(-Math.PI/2 - 0.2, 0, 1, 0)).times(Mat4.scale(1/8, 1/8, 1/8)), this.skull);
+
         }
 
         // Text
