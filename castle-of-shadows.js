@@ -556,7 +556,7 @@ export class Castle_of_shadows extends Simulation {
                     Text_System.typewriter_animation(this.insight_text, "Door is locked");
                     return;
                 }
-                Text_System.typewriter_animation(this.insight_text, "You escaped                                     ");
+                Text_System.typewriter_animation(this.insight_text, "You Escaped");
                 Item_System.destroy(Item_System.held_item);
                 door.open = true;
             });
