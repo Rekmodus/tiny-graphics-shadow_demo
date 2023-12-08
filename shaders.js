@@ -110,7 +110,7 @@ export class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shad
 
                     // Modify this threshold as needed
                     float distance_threshold = 0.02;
-                    float light_radius = 0.2;
+                    float light_radius = 0.3;
 
                     // Adjust shadow based on distance from the center
                     float circular_flashlight_attenuation = inRange ? smoothstep(light_radius, light_radius + distance_threshold, distance) : 1.0;
