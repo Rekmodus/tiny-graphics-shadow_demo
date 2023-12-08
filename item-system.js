@@ -87,6 +87,7 @@ export class Item {
     static Flashlight = 1;
     static Key = 2;
     static Box = 3;
+    static Tool = 4;
 
     constructor(ID, model, transform, material) {
         Object.assign(this, {

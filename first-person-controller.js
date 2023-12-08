@@ -11,7 +11,7 @@ import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
 import { walls, triggers, doors, _triggers, _doors } from './Walls.js';
 //import {open_teapot_door} from './castle-of-shadows.js';
-import {gate_open, open_skull_door, open_hall_door} from './castle-of-shadows.js';
+import {gate_open, open_skull_door, open_hall_door, open_gate_number} from './castle-of-shadows.js';
 
 let monster_trigger = false;
 export {monster_trigger};
@@ -423,6 +423,8 @@ export class Movement_Controls_2 extends Scene {
 
                 const gate_index = 7;
                 if (i === gate_index && gate_open) {continue}
+
+                if (i === open_gate_number) {continue}
 
                 //const index = walls.indexOf(searchWall); // Returns the index of the first occurrence
                 //const exists = walls.includes(searchWall); // Returns true if the element exists in the array
