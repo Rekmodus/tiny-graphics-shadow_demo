@@ -83,7 +83,8 @@ export class Castle_of_shadows extends Simulation {
             "cube": new Cube(),
             "floor": new Cube(),
             "square_2d": new Square(),
-            text: new Text_Line(35)
+            text: new Text_Line(35),
+            "axe": new Shape_From_File("assets/axe.obj"),
         };
         this.shapes.floor.arrays.texture_coord.forEach(p => p.scale_by(4*5));
 
@@ -225,6 +226,13 @@ export class Castle_of_shadows extends Simulation {
             light_depth_texture: null
         })
 
+        this.axe = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.025, .025, .025, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/Axe_BaseColor.png"),
+            light_depth_texture: null
+        })
+
         this.invisible = new Material(new Phong_Shader(), {
             color: color(0, 0, 0, 0),
         })
@@ -266,10 +274,10 @@ export class Castle_of_shadows extends Simulation {
 
         //let model_transform = Mat4.translation(5, 1.5, 0).times(Mat4.rotation(-Math.PI/2, 1, 0, 0));
 
-        Item_System.held_item = Item_System.create_item(Item.Flashlight, this.shapes.Flashlight, Mat4.identity(), this.flash);
+        Item_System.held_item = null; //Item_System.create_item(Item.Flashlight, this.shapes.blender_cube, Mat4.identity(), this.flash);
 
         let box_transform = gate_room_base_transform.times(Mat4.translation(0, 0.125, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
-        let key_transform = gate_room_base_transform.times(Mat4.translation(-3, 0.75, -5)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
+        let key_transform = gate_room_base_transform.times(Mat4.translation(-3, 0.75, -5)).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5));
 
         Item_System.create_item(Item.Box, this.shapes.cube, box_transform, this.wood_door);
         Item_System.create_item(Item.Key, this.shapes.key, key_transform, this.Key);
@@ -316,7 +324,7 @@ export class Castle_of_shadows extends Simulation {
 
         room1.create_obj(this.shapes.table, Mat4.translation(0, 0, 5), this.wood);
 
-        let test_key_transform = Mat4.translation(0, 0.75, 5).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
+        let test_key_transform = Mat4.translation(0, 0.75, 5).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5));
         room1.create_item(Item.Key, this.shapes.key, test_key_transform, this.Key);
 
         room1.create_door_z(-2, 3, 2, 3, this.wood_door, (door) => {
@@ -361,7 +369,7 @@ export class Castle_of_shadows extends Simulation {
             }
 
             // Key
-            let key_transform = this.room3_parent.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
+            let key_transform = this.room3_parent.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5));
             Item_System.create_item(Item.Debug, this.shapes.key, key_transform, this.Key);
 
             Interaction_System.create_interaction(gate_room_base_transform.times(Mat4.translation(5, 1, 10)), (interaction) => {
@@ -422,7 +430,7 @@ export class Castle_of_shadows extends Simulation {
 
             let table_transform = Mat4.translation(-2, 0, -14);
             room4.create_obj(this.shapes.table, table_transform, this.wood);
-            room4.create_item(Item.Key, this.shapes.key, table_transform.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5)), this.Key);
+            room4.create_item(Item.Key, this.shapes.key, table_transform.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5)), this.Key);
 
             //Gates
 
@@ -472,7 +480,7 @@ export class Castle_of_shadows extends Simulation {
 
             //Axe?
 
-            room4.create_item(Item.Tool, this.shapes.cube, Mat4.translation(6, 0.125, -13.5).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5)), this.wood);
+            room4.create_item(Item.Tool, this.shapes.axe, Mat4.translation(6, 0.125, -13.5).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(1, 1, 1)), this.axe);
 
             //Breakable Wall
 
@@ -736,8 +744,9 @@ export class Castle_of_shadows extends Simulation {
             this.t = t;
         }
    
-        let base_transform = Mat4.identity().times(Mat4.scale(0.2,0.2,0.2).times(Mat4.translation(2.5 + (0.01 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
-        //this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass? this.flash : this.pure);
+        let base_transform = Mat4.identity().times(Mat4.scale(0.2,0.2,0.2).times(Mat4.translation(-2.5 + (0.01 + 0.01*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.01*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
+        let base_transform_r = Mat4.identity().times(Mat4.scale(0.2,0.2,0.2).times(Mat4.translation(2.5 + (0.01 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
+        this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform_r), shadow_pass? this.flash : this.pure);
         
         let model_transform = Mat4.identity();
         //this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
@@ -960,13 +969,13 @@ export class Castle_of_shadows extends Simulation {
         
         this.light_field_of_view = 90 * Math.PI / 180; // 130 degree
         program_state.lights = [new Light(this.light_position, this.light_color, 0)];
-        if(Item_System.player_holds(Item.Flashlight)){
+        //if(Item_System.player_holds(Item.Flashlight)){
             if(!this.hover){
                 program_state.lights = [new Light(this.light_position, this.light_color, 1000)];
             }else{
                 program_state.lights = [new Light(this.light_position, this.light_color, 0)];
             }            
-        }
+        //}
 
 
         // Step 1: set the perspective and camera to the POV of light
