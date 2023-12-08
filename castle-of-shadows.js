@@ -19,7 +19,7 @@ const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, S
 
 const {Cube, Axis_Arrows, Textured_Phong, Phong_Shader, Basic_Shader, Subdivision_Sphere} = defs
 
-let open_skull_door = false;
+let open_skull_door = true;
 export {open_skull_door};
 
 let gate_open = false;
@@ -28,7 +28,7 @@ export {gate_open};
 let skull_drop = false;
 export {skull_drop};
 
-let open_hall_door = false;
+let open_hall_door = true;
 export {open_hall_door};
 
 let open_gate_number;
@@ -311,7 +311,7 @@ export class Castle_of_shadows extends Simulation {
         */
 
 //Room Test
-
+        /*
         let room1 = Room_Builder.create_room(Mat4.translation(5, 0, 20));
 
         room1.create_wall_x(0, 0, 4, 3, this.Wall);
@@ -335,6 +335,7 @@ export class Castle_of_shadows extends Simulation {
 
         let trigger = Mat4.translation(0, 0, 5).times(Mat4.scale(1, 1, 2));
         room1.create_trigger(trigger, () => {console.log("Trigger!");});
+        */
 
 //Room 3
         {
@@ -371,7 +372,7 @@ export class Castle_of_shadows extends Simulation {
             // Key
             let key_transform = this.room3_parent.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5));
             Item_System.create_item(Item.Debug, this.shapes.key, key_transform, this.Key);
-
+            /*
             Interaction_System.create_interaction(gate_room_base_transform.times(Mat4.translation(5, 1, 10)), (interaction) => {
                 if (!Item_System.player_holds(Item.Debug)) {
                     console.log("Skull Door is locked");
@@ -383,8 +384,8 @@ export class Castle_of_shadows extends Simulation {
                 Item_System.destroy(Item_System.held_item);
                 Interaction_System.destroy(interaction);
                 open_skull_door = true;
-            });
-
+            });*/
+            /*
             Interaction_System.create_interaction(this.room3_parent.times(Mat4.translation(8, 1, 14).times(Mat4.scale(1.5, 5, 0.25))), (interaction) => {
                 if (!Item_System.player_holds(Item.Key)) {
                     console.log("Door is locked");
@@ -397,11 +398,12 @@ export class Castle_of_shadows extends Simulation {
                 Interaction_System.destroy(interaction);
                 open_hall_door = true;
             });
+            */
         }
 
         //Jail Room
         {
-            this.room4_parent = Mat4.translation(20, 0, 5);
+            this.room4_parent = Mat4.translation(-19, 0, 38.5);
             let room4 = Room_Builder.create_room(this.room4_parent);
 
             //Walls, Floor, and Ceiling
@@ -511,6 +513,59 @@ export class Castle_of_shadows extends Simulation {
             room4.create_obj(this.shapes.barrel1, barrel_scale(Mat4.translation(7, 0.5, -2)), this.barrel);
             room4.create_obj(this.shapes.chain, Mat4.translation(7.625, 2, -6).times(Mat4.rotation(Math.PI/2, 0, 1, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)), this.Chain);
             room4.create_obj(this.shapes.skull, Mat4.translation(7.5, 0.125, -6.5).times(Mat4.rotation(-Math.PI/2 - 0.2, 0, 1, 0)).times(Mat4.scale(1/8, 1/8, 1/8)), this.skull);
+
+        }
+
+        //Hallway
+
+        {
+            let hall = Room_Builder.create_room(Mat4.identity());
+
+            hall.create_wall_x(0, 13.5, 15, 3, this.Wall);
+            hall.create_wall_z(7.5, 10.5, 6, 3, this.Wall);
+
+            hall.create_door_z(-7.5, 11.75, 3, 3, this.wood_door, (door)=>{
+                if (!Item_System.player_holds(Item.Key)) {
+                    Text_System.typewriter_animation(this.insight_text, "Door is locked");
+                    return;
+                }
+                Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
+                Item_System.destroy(Item_System.held_item);
+                door.open = true;
+            });
+
+            hall.create_wall_z(-7, 27.5, 28, 3, this.Wall);
+
+            hall.create_door_x(-9.25, 14, 4, 3, this.wood_door, (door)=>{
+                if (!Item_System.player_holds(Item.Debug)) {
+                    Text_System.typewriter_animation(this.insight_text, "Door is locked");
+                    return;
+                }
+                Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
+                Item_System.destroy(Item_System.held_item);
+                door.open = true;
+            });
+
+            hall.create_wall_x(-17, 41.5, 20, 3, this.Wall);
+
+            hall.create_door_z(-27, 40, 3, 3, this.wood_door, (door)=>{
+                if (!Item_System.player_holds(Item.Key)) {
+                    Text_System.typewriter_animation(this.insight_text, "Door is locked");
+                    return;
+                }
+                Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
+                Item_System.destroy(Item_System.held_item);
+                door.open = true;
+            });
+
+            hall.create_floor_ceil(0, 10.5, 15, 6, 3, this.Wall);
+            hall.create_floor_ceil(-9, 26, 3.5, 31.5, 3, this.Wall);
+            hall.create_floor_ceil(-19, 40, 16.5, 3, 3, this.Wall);
+
+            hall.create_obj(this.shapes.cube, Mat4.translation(-7.375, 3, 11.75).times(Mat4.scale(0.124, 0.125, 1.9)), this.wood_door);
+            hall.create_obj(this.shapes.cube, Mat4.translation(-7.375, 0, 11.75).times(Mat4.scale(0.124, 0.125, 1.9)), this.wood_door);
+
+            hall.create_obj(this.shapes.cube, Mat4.translation(-10.5, 5, 10.5).times(Mat4.scale(0.25, 2, 3)), this.Wall);
 
         }
 
@@ -867,16 +922,17 @@ export class Castle_of_shadows extends Simulation {
                 this.shapes.monster.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, -10, 15)).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
 
             }
-
+            /*
             if (!open_skull_door) {
                 let door_transform = Mat4.translation(5, 1.5, 10).times(Mat4.scale(0.25, 3, 1));
                 this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
             }
-
+            */
+            /*
             if (!open_hall_door) {
                 let door_transform = this.room3_parent.times(Mat4.translation(8, 1, 14)).times(Mat4.scale(1.5, 5, 0.25));
                 this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
-            }
+            }*/
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall1), shadow_pass? this.floor : this.pure);
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall2), shadow_pass? this.floor : this.pure);
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall3), shadow_pass? this.floor : this.pure);
