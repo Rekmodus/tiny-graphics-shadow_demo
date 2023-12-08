@@ -71,7 +71,7 @@ export class Shadow_Fog_Textured_Phong_Shader extends Shadow_Textured_Phong_Shad
 
                 vec3 final_color = gl_FragColor.xyz;
 
-                float fog_density = 0.15;
+                float fog_density = 0.2;
 
                 // Simulate fog based on distance from the camera:
                 float fog_distance = length(vertex_worldspace - camera_center);

@@ -13,10 +13,10 @@ import { walls, triggers, doors, _triggers, _doors } from './Walls.js';
 //import {open_teapot_door} from './castle-of-shadows.js';
 import {gate_open, open_skull_door, open_hall_door, open_gate_number} from './castle-of-shadows.js';
 
-let monster_trigger = false;
-export {monster_trigger};
+// let monster_trigger = false;
+// export {monster_trigger};
 
-let monster_init = false;
+// let monster_init = false;
 
 export class Movement_Controls_2 extends Scene {
         // **Movement_Controls** is a Scene that can be attached to a canvas, like any other
@@ -175,8 +175,8 @@ export class Movement_Controls_2 extends Scene {
             // }, "#8B8885");
             //this.new_line();
 
-            this.key_triggered_button("Look at origin from front", ["2"], () => {
-                this.inverse().set(Mat4.look_at(vec3(0, 1.9, 10.1), vec3(0, 1.9, 0), vec3(0, 1, 0)));
+            this.key_triggered_button("Look at origin from front", ["2"], () => { //-6.2,20
+                this.inverse().set(Mat4.look_at(vec3(-6, 1.9, 24), vec3(0, 1.9, 0), vec3(0, 1, 0)));
                 this.matrix().set(Mat4.inverse(this.inverse()));
             }, "#8B8885");
             // this.new_line();ggg
@@ -351,18 +351,18 @@ export class Movement_Controls_2 extends Scene {
                 ) {
 
                     console.log("Collision with trigger " + i);
-                    if (i == 0){
-                        // start jumpscare
-                        if(!monster_init){
-                            monster_trigger = true;      
-                            monster_init = true;          
-                        }
+                    // if (i == 0){
+                    //     // start jumpscare
+                    //     if(!monster_init){
+                    //         monster_trigger = true;      
+                    //         monster_init = true;          
+                    //     }
 
-                    }
-                    if (i == 1){
-                        // start jumpscare
-                        monster_trigger = false;
-                    }
+                    // }
+                    // if (i == 1){
+                    //     // start jumpscare
+                    //     monster_trigger = false;
+                    // }
 
                 }
             }

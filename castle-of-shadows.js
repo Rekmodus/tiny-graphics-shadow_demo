@@ -10,7 +10,7 @@ import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Text_Line} from './examples/text-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
-import {monster_trigger} from './first-person-controller.js'
+//import {monster_trigger} from './first-person-controller.js'
 import { Text_System } from './text-system.js';
 import {walls} from './Walls.js'
 
@@ -33,6 +33,12 @@ export {open_hall_door};
 
 let open_gate_number;
 export {open_gate_number};
+
+let room3_hidden_wall = false;
+export {room3_hidden_wall};
+
+let monster_number = 0;
+export {monster_number};
 
 const gate_room_base_transform = Mat4.identity();
 
@@ -233,6 +239,20 @@ export class Castle_of_shadows extends Simulation {
             light_depth_texture: null
         })
 
+        this.bookshelf = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.025, .025, .025, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 4,
+            color_texture: new Texture("assets/bookshelf.png"),
+            light_depth_texture: null
+        })
+
+        this.tile = new Material(new Shadow_Fog_Textured_Phong_Shader(1), {
+            color: color(.025, .025, .025, 1),
+            ambient: 0.5, diffusivity: 1, specularity: 1,
+            color_texture: new Texture("assets/tile.png"),
+            light_depth_texture: null
+        })
+
         this.invisible = new Material(new Phong_Shader(), {
             color: color(0, 0, 0, 0),
         })
@@ -276,10 +296,10 @@ export class Castle_of_shadows extends Simulation {
 
         Item_System.held_item = null; //Item_System.create_item(Item.Flashlight, this.shapes.blender_cube, Mat4.identity(), this.flash);
 
-        let box_transform = gate_room_base_transform.times(Mat4.translation(0, 0.125, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.5, 0.5, 0.5));
+        let box_transform = gate_room_base_transform.times(Mat4.translation(0, 0.125, 0)).times(Mat4.rotation(-Math.PI/2 + 0.3, 1, 1, 0.1)).times(Mat4.scale(0.7, 0.7, 0.7));
         let key_transform = gate_room_base_transform.times(Mat4.translation(-3, 0.75, -5)).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5));
 
-        Item_System.create_item(Item.Box, this.shapes.cube, box_transform, this.wood_door);
+        Item_System.create_item(Item.Box, this.shapes.skull, box_transform, this.skull);
         Item_System.create_item(Item.Key, this.shapes.key, key_transform, this.Key);
 
         //this.item_sys.create_item(Item.Debug, this.shapes.cube, Mat4.translation(0, 1, 10), this.wood);
@@ -312,33 +332,102 @@ export class Castle_of_shadows extends Simulation {
 
 //Room Test
 
-        let room1 = Room_Builder.create_room(Mat4.translation(5, 0, 20));
+        // let room1 = Room_Builder.create_room(Mat4.translation(5, 0, 20));
 
-        room1.create_wall_x(0, 0, 4, 3, this.Wall);
-        room1.create_wall_x(0, 10, 4, 3, this.Wall);
-        room1.create_wall_z(2, 5, 10, 3, this.Wall);
-        room1.create_wall_z(-2, 5, 2, 2, this.Wall);
-        room1.create_wall_z(-2, 1, 2, 3, this.Wall);
+        // room1.create_wall_x(0, 0, 4, 3, this.Wall);
+        // room1.create_wall_x(0, 10, 4, 3, this.Wall);
+        // room1.create_wall_z(2, 5, 10, 3, this.Wall);
+        // room1.create_wall_z(-2, 5, 2, 2, this.Wall);
+        // room1.create_wall_z(-2, 1, 2, 3, this.Wall);
 
-        room1.create_floor_ceil(0, 5, 4, 10, 3, this.floor);
+        // room1.create_floor_ceil(0, 5, 4, 10, 3, this.floor);
 
-        room1.create_obj(this.shapes.table, Mat4.translation(0, 0, 5), this.wood);
+        // room1.create_obj(this.shapes.table, Mat4.translation(0, 0, 5), this.wood);
 
-        let test_key_transform = Mat4.translation(0, 0.75, 5).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5));
-        room1.create_item(Item.Key, this.shapes.key, test_key_transform, this.Key);
+        // let test_key_transform = Mat4.translation(0, 0.75, 5).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5));
+        // room1.create_item(Item.Key, this.shapes.key, test_key_transform, this.Key);
 
-        room1.create_door_z(-2, 3, 2, 3, this.wood_door, (door) => {
-            if (!Item_System.player_holds(Item.Key)) {return;}
+        // room1.create_door_z(-2, 3, 2, 3, this.wood_door, (door) => {
+        //     if (!Item_System.player_holds(Item.Key)) {return;}
+        //     door.open = true;
+        //     Item_System.destroy(Item_System.held_item);
+        // });
+
+        // let trigger = Mat4.translation(0, 0, 5).times(Mat4.scale(1, 1, 2));
+        // room1.create_trigger(trigger, () => {console.log("Trigger!");});
+
+
+// hallways
+        let room0 = Room_Builder.create_room(Mat4.translation(0, 0, 0));
+        room0.create_wall_z(8,9,5,3, this.Wall); 
+        room0.create_wall_x(2,11,14,3, this.Wall); 
+        room0.create_wall_z(-4.5,25.5,30,3, this.Wall); 
+        room0.create_wall_x(-13,38.5,100,3, this.Wall); 
+        room0.create_wall_x(-70,35.5,100,3, this.Wall); 
+
+        room0.create_wall_z(3.5,1,0.5,4.5, this.Wall);
+        room0.create_wall_z(3.5,4,0.5,4.5, this.Wall);
+        room0.create_wall_z(-5,4,0.5,4.5, this.Wall);
+        room0.create_wall_z(-5,1,0.5,4.5, this.Wall);
+
+        //room0.create_wall_z(-1.5,9.5,3,3, this.Wall); 
+        room0.create_door_z(-2,9.2,3,3, this.wood_door, (door) => {
+            if (!Item_System.player_holds(Item.Key)) {
+                Text_System.typewriter_animation(this.insight_text, "Door is locked");
+                return;
+            }
             door.open = true;
             Item_System.destroy(Item_System.held_item);
+            Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
+        });
+        //room0.create_wall_z(-6,20,3,3, this.Wall);
+        room0.create_door_x(-6.2,20,3,3, this.wood_door, (door) => {
+            if (!Item_System.player_holds(Item.Debug)) {
+                Text_System.typewriter_animation(this.insight_text, "Door is locked");
+                return;
+            }
+            door.open = true;
+            Item_System.destroy(Item_System.held_item);
+            Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
+        });
+        //room0.create_wall_z(-23.5,37,3,3, this.Wall); 
+        room0.create_door_z(-23.5,37,3,3, this.wood_door, (door) => {
+            if (!Item_System.player_holds(Item.Key)) {
+                Text_System.typewriter_animation(this.insight_text, "Door is locked. ");
+                return;
+            }
+            door.open = true;
+            Item_System.destroy(Item_System.held_item);
+            Text_System.typewriter_animation(this.insight_text, "You have escaped              ...");
         });
 
-        let trigger = Mat4.translation(0, 0, 5).times(Mat4.scale(1, 1, 2));
-        room1.create_trigger(trigger, () => {console.log("Trigger!");});
+        let trigger_mon = Mat4.translation(-35, 18, 37); // room0.create_wall_z(-9,37,1,1, this.Wall); 
+        let end_trigger_mon = Mat4.translation(-6, 27, 34);
 
+
+        room0.create_trigger(end_trigger_mon, () => {
+            if(monster_number == 0){
+                monster_number++;                
+            }
+
+        });
+
+        room0.create_obj(this.shapes.chain, Mat4.translation(4, 2, 8).times(Mat4.rotation(Math.PI, 0, 1, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)), this.Chain);
+        room0.create_obj(this.shapes.chain, Mat4.translation(2, 2, 10.5).times(Mat4.rotation(Math.PI, 0, 1, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)), this.Chain);
+        room0.create_obj(this.shapes.skeleton, Mat4.translation(3, 0.125, -2).times(Mat4.rotation(-Math.PI/2 + 0.5, 0, 1, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.7, 0.7, 0.7)), this.skeleton);
+
+
+        //room0.create_wall_z(-6,18,1,1, this.Wall);
+        room0.create_trigger(trigger_mon, () => {
+            if(monster_number == 1){
+                monster_number++;                
+            }
+        });
 //Room 3
         {
-            this.room3_parent = Mat4.translation(-25, 0, -5);
+            
+            this.room3_parent = Mat4.translation(-13, 0, 15);
+            let room3_base = Room_Builder.create_room(this.room3_parent);
             this.room3 = {
                 "wall_left": Mat4.translation(-5, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 5)),
                 //"wall_right": Mat4.translation(+5, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 5)),
@@ -351,57 +440,42 @@ export class Castle_of_shadows extends Simulation {
                 "ceiling": Mat4.translation(0, 5, 0).times(Mat4.scale(5, 0.33, 5)),
                 "floor": Mat4.translation(0, -0.1, 0).times(Mat4.scale(5, 0.1, 5)),
 
-
-                // hallway
-
-                "wall_back_hall": Mat4.translation(8, 2 - 0.1, -2).times(Mat4.scale(4, 5, 0.33)),
-                "wall_front_hall2": Mat4.translation(6, 2 - 0.1, 2).times(Mat4.scale(1, 5, 0.33)),
-                "wall_right_hall": Mat4.translation(6, 2 - 0.1, 11).times(Mat4.scale(0.33, 4, 9)),
-                "wall_right_hall2": Mat4.translation(10, 2 - 0.1, 5).times(Mat4.scale(0.33, 5, 10)),
-
-                // corner
-                "wall_back_corner": Mat4.translation(14, 2 - 0.1, 15).times(Mat4.scale(4, 4, 0.33)),
-                "wall_front_corner2": Mat4.translation(10, 2 - 0.1, 19).times(Mat4.scale(4, 4, 0.33)),
-
-                "wall_front1": Mat4.translation(14, 2 - 0.1, 23.5).times(Mat4.scale(0.33, 5, 5)),
-                "wall_front2": Mat4.translation(17, 2 - 0.1, 12).times(Mat4.scale(0.33, 3, 3)),
-
             }
 
             // Key
             let key_transform = this.room3_parent.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5));
             Item_System.create_item(Item.Debug, this.shapes.key, key_transform, this.Key);
 
-            Interaction_System.create_interaction(gate_room_base_transform.times(Mat4.translation(5, 1, 10)), (interaction) => {
-                if (!Item_System.player_holds(Item.Debug)) {
-                    console.log("Skull Door is locked");
-                    Text_System.typewriter_animation(this.insight_text, "Door is locked");
-                    return;
-                }
-                console.log("You unlocked the skull door");
-                Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
-                Item_System.destroy(Item_System.held_item);
-                Interaction_System.destroy(interaction);
-                open_skull_door = true;
-            });
+            // Interaction_System.create_interaction(gate_room_base_transform.times(Mat4.translation(5, 1, 10)), (interaction) => {
+            //     if (!Item_System.player_holds(Item.Debug)) {
+            //         console.log("Skull Door is locked");
+            //         Text_System.typewriter_animation(this.insight_text, "Door is locked");
+            //         return;
+            //     }
+            //     console.log("You unlocked the skull door");
+            //     Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
+            //     Item_System.destroy(Item_System.held_item);
+            //     Interaction_System.destroy(interaction);
+            //     open_skull_door = true;
+            // });
 
-            Interaction_System.create_interaction(this.room3_parent.times(Mat4.translation(8, 1, 14).times(Mat4.scale(1.5, 5, 0.25))), (interaction) => {
-                if (!Item_System.player_holds(Item.Key)) {
-                    console.log("Door is locked");
-                    Text_System.typewriter_animation(this.insight_text, "Door is locked");
-                    return;
-                }
-                console.log("You unlocked the door");
-                Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
-                Item_System.destroy(Item_System.held_item);
-                Interaction_System.destroy(interaction);
-                open_hall_door = true;
-            });
+            // Interaction_System.create_interaction(this.room3_parent.times(Mat4.translation(8, 1, 14).times(Mat4.scale(1.5, 5, 0.25))), (interaction) => {
+            //     if (!Item_System.player_holds(Item.Key)) {
+            //         console.log("Door is locked");
+            //         Text_System.typewriter_animation(this.insight_text, "Door is locked");
+            //         return;
+            //     }
+            //     console.log("You unlocked the door");
+            //     Text_System.typewriter_animation(this.insight_text, "You unlocked the door");
+            //     Item_System.destroy(Item_System.held_item);
+            //     Interaction_System.destroy(interaction);
+            //     open_hall_door = true;
+            // });
         }
 
         //Jail Room
         {
-            this.room4_parent = Mat4.translation(20, 0, 5);
+            this.room4_parent = Mat4.translation(-16, 0, 35.5);
             let room4 = Room_Builder.create_room(this.room4_parent);
 
             //Walls, Floor, and Ceiling
@@ -514,12 +588,50 @@ export class Castle_of_shadows extends Simulation {
 
         }
 
+        //Library
+        {
+            // this.room5_parent = Mat4.translation(20, 0, -20);
+            // let room5 = Room_Builder.create_room(this.room5_parent);
+
+            // //Walls, Floor, and Ceiling
+
+            // room5.create_wall_x(0, -15, 16, 10, this.bookshelf);
+
+            // room5.create_wall_x(-4.625, 0, 6.75, 10, this.Wall);
+            // room5.create_wall_x(4.625, 0, 6.75, 10, this.Wall);
+
+            // room5.create_wall_z(-8, -7.5, 15, 10, this.bookshelf);
+            // room5.create_wall_z(8, -7.5, 15, 10, this.bookshelf);
+
+            // room5.create_wall_x(-7.75, -11, 0.5, 10, this.Wall);
+            // room5.create_wall_x(-4, -11, 1, 10, this.Wall);
+            // room5.create_wall_x(0, -11, 1, 10, this.Wall);
+            // room5.create_wall_x(4, -11, 1, 10, this.Wall);
+            // room5.create_wall_x(7.75, -11, 0.5, 10, this.Wall);
+
+            
+            // //x: 2  z:  24  length:  33  height:  6  mat:  0  precision:  1
+
+            // // room5.create_wall_z(0, -13, 4, 3, this.Wall);
+            // // room5.create_wall_z(4, -13, 4, 3, this.Wall);
+
+            // room5.create_floor_ceil(0, -7.5, 16, 15, 10, this.tile);
+
+            // //Table and Key
+
+            // let table_transform = Mat4.translation(-2, 0, -14);
+            // room5.create_obj(this.shapes.table, table_transform, this.wood);
+            // room5.create_item(Item.Key, this.shapes.key, table_transform.times(Mat4.translation(0, 0.75, 0)).times(Mat4.rotation(-Math.PI/2, 0, 0, 1)).times(Mat4.scale(0.5, 0.5, 0.5)), this.Key);
+
+        }
+
         // Text
         //Text_System.create_text("The string", scale, xpos, ypos) 0,0 is the center of screen. outputs the index of the text in the text_list array
         this.pickup_text = Text_System.create_text("", 1, -7, -15);
         this.insight_text = Text_System.create_text("", 0.7, -12, 20);
         this.objective_text = Text_System.create_text("Objective: Escape", 0.5, -70, 38);
     }
+    
 
     make_control_panel() {
         // make_control_panel(): Sets up a panel of interactive HTML elements, including
@@ -657,85 +769,11 @@ export class Castle_of_shadows extends Simulation {
 
         program_state.draw_shadow = draw_shadow;
         let model_trans_floor = Mat4.translation(0, -0.1, 0).times(Mat4.scale(16 * 5, 0.1, 10 * 5));
-        let model_trans_ceil = Mat4.translation(0, 6, 0).times(Mat4.scale(16 * 5, 0.1, 10 * 5));
+        let model_trans_ceil = Mat4.translation(0, 4, 0).times(Mat4.scale(16 * 5, 0.1, 10 * 5));
         this.shapes.floor.draw(context, program_state, model_trans_floor, shadow_pass? this.floor : this.pure);
         this.shapes.floor.draw(context, program_state, model_trans_ceil, shadow_pass? this.floor : this.pure);
-        // if (draw_light_source && shadow_pass) {
-        //     this.shapes.sphere.draw(context, program_state,
-        //         Mat4.translation(light_position[0], light_position[1], light_position[2]).times(Mat4.scale(0.1,0.1,0.1)),
-        //         this.light_src.override({color: light_color}));
-        // }
-/*
-        for (let i of [-1, 1]) { // Spin the 3D model shapes as well.
-            const model_transform = Mat4.translation(2 * i, 3, 0)
-                .times(Mat4.rotation(t / 1000, -1, 2, 0))
-                .times(Mat4.rotation(-Math.PI / 2, 0, 1, 0));
-            this.shapes.table.draw(context, program_state, model_transform, shadow_pass? this.wood : this.pure);
-        }
-
-        let model_trans_floor = Mat4.translation(0, 0, 0).times(Mat4.scale(16 * 5, 0.1, 10 * 5));
-        let model_trans_ceil = Mat4.translation(0, 8, 0).times(Mat4.scale(16 * 5, 0.1, 10 * 5));
-        let model_trans_ball_0 = Mat4.translation(0, 1, 0);
-        let model_trans_ball_1 = Mat4.translation(5, 0.5, 0);
-        let model_trans_ball_2 = Mat4.translation(-5, 1.8, 0).times(Mat4.scale(0.5, 0.5, 0.5));
         
-        let model_trans_ball_4 = Mat4.translation(-5, 1, -3);
-
-        let model_trans_wall_1 = Mat4.translation(-8, 2 - 0.1, 0).times(Mat4.scale(0.33, 3, 5));
-        let model_trans_wall_2 = Mat4.translation(+8, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 8));
-        let model_trans_wall_3 = Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(8, 5, 0.33));
-
-
-        this.shapes.floor.draw(context, program_state, model_trans_floor, shadow_pass? this.floor : this.pure);
-        this.shapes.floor.draw(context, program_state, model_trans_ceil, shadow_pass? this.floor : this.pure);
-
-        this.shapes.cube.draw(context, program_state, model_trans_wall_1, shadow_pass? this.Wall : this.pure);
-        this.shapes.cube.draw(context, program_state, model_trans_wall_2, shadow_pass? this.floor : this.pure);
-        this.shapes.cube.draw(context, program_state, model_trans_wall_3, shadow_pass? this.floor : this.pure);
-        this.shapes.cube.draw(context, program_state, Mat4.translation(0, 1, 0).times(Mat4.identity()), shadow_pass? this.floor : this.pure);
-
-
-        //const planet_position = program_state.camera_transform.times(vec4(0, 0, 0, 1));
-
-        //this.light_position = Mat4.translation(0,0,0).times(planet_position);
-        //this.shapes.cube.draw(context, program_state, Mat4.translation(0,0,1).times(planet_position), shadow_pass? this.floor : this.pure);
-
-
-        this.shapes.table.draw(context, program_state, model_trans_ball_1, shadow_pass? this.wood : this.pure);
-        this.shapes.skeleton.draw(context, program_state, model_trans_ball_2, shadow_pass? this.skeleton : this.pure);
-
-        let model_trans_barrel_1 = Mat4.translation(-10, 1, 3);
-        let model_trans_barrel_2 = Mat4.translation(-12, 1, 3);
-        let model_trans_barrel_3 = Mat4.translation(-14, 1, 3);
-        let model_trans_barrel_4 = Mat4.translation(-16, 1, 3);
-        this.shapes.barrel1.draw(context, program_state, model_trans_barrel_1, shadow_pass? this.barrel : this.pure);
-        this.shapes.barrel2.draw(context, program_state, model_trans_barrel_2, shadow_pass? this.barrel : this.pure);
-        this.shapes.barrel3.draw(context, program_state, model_trans_barrel_3, shadow_pass? this.barrel : this.pure);
-        this.shapes.barrel4.draw(context, program_state, model_trans_barrel_4, shadow_pass? this.barrel : this.pure);
-        
-        let model_trans_key_3 = Mat4.translation(0, 1, 3).times(Mat4.scale(0.4, 0.4, 0.4));
-        this.shapes.key.draw(context, program_state, model_trans_key_3, shadow_pass? this.Key : this.pure);
-
-        this.shapes.chain.draw(context, program_state, Mat4.translation(-4, 1, 8).times(Mat4.scale(0.8, 0.8, 0.8)), shadow_pass? this.Chain : this.pure);
-
-        if (!open_teapot_door) {
-            let door_transform = Mat4.translation(5, 1.5, 10).times(Mat4.scale(0.25, 3, 1));
-            this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
-        }
-*/
-
-        //let agent_trans = Mat4.translation(this.agent_pos[0], this.agent_pos[1], this.agent_pos[2]).
-        //times(Mat4.scale(this.agent_size,this.agent_size,this.agent_size));
-        //this.moon = agent_trans;
-        // console.log("moon!!" + this.moon);
-        //() => this.attached = () => this.agent_trans_;
-
-        //this.agent.draw(context, program_state, agent_trans, shadow_pass? this.mon : this.pure);
-        //this.agent_pos = program_state.camera_transform
-        //console.log("cam trans");
         this.agent_pos = program_state.camera_transform.times(vec4(0, 0, 0, 1)).to3();
-
-        //this.agent_body = new Body(this.agent.draw(context, program_state, agent_trans, shadow_pass? this.mon : this.pure));
     
         if (this.attached){
             if (this.attached() != null){
@@ -766,10 +804,6 @@ export class Castle_of_shadows extends Simulation {
         let base_transform = Mat4.identity().times(Mat4.scale(0.2,0.2,0.2).times(Mat4.translation(-2.5 + (0.01 + 0.01*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.01*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
         let base_transform_r = Mat4.identity().times(Mat4.scale(0.2,0.2,0.2).times(Mat4.translation(2.5 + (0.01 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-1.5 + (0.1 + 0.05*this.moving)*Math.sin(this.t/(900 - 700 * this.moving)),-5)));
         this.shapes.Flashlight.draw(context, program_state, program_state.camera_transform.times(base_transform_r), shadow_pass? this.flash : this.pure);
-        
-        let model_transform = Mat4.identity();
-        //this.shapes.picture.draw(context, program_state, Mat4.translation(-2,2,0).times(Mat4.rotation(t/1000, 1,0,0)).times(model_transform), this.pic2);
-        //this.shapes.picture.draw(context, program_state, model_trans_ball_4, this.pic);
 
 
         Item_System.draw_items(context, program_state, program_state.camera_transform.times(base_transform), shadow_pass);
@@ -824,8 +858,8 @@ export class Castle_of_shadows extends Simulation {
         this.shapes.cube.draw(context, program_state, gr_button, shadow_pass? this.Wall : this.pure);
 
         if (gate_open) {
-            let button_box = gate_room_base_transform.times(Mat4.translation(-3.75, 0.25, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 0)).times(Mat4.scale(0.125, 0.125, 0.125));
-            this.shapes.cube.draw(context, program_state, button_box, shadow_pass? this.wood_door : this.pure);
+            let button_box = gate_room_base_transform.times(Mat4.translation(-3.75, 0.25, 0)).times(Mat4.rotation(-Math.PI/2, 1, 0, 1)).times(Mat4.scale(0.2, 0.2, 0.2));
+            this.shapes.skull.draw(context, program_state, button_box, shadow_pass? this.skull : this.pure);
         }
 
         //Table
@@ -855,28 +889,35 @@ export class Castle_of_shadows extends Simulation {
             this.shapes.barrel4.draw(context, program_state,this.room3_parent.times( Mat4.translation(-3.5, 1, 4)), shadow_pass? this.barrel : this.pure);
             this.shapes.skeleton.draw(context, program_state,this.room3_parent.times( Mat4.translation(-3.5, 2, 0)).times(Mat4.scale(0.9, 0.9, 0.9)).times(Mat4.rotation(Math.PI/2,0,1,0)), shadow_pass? this.skeleton : this.pure);
             this.shapes.chain.draw(context, program_state, this.room3_parent.times( Mat4.translation(-4.5, 2, 0)).times(Mat4.scale(0.8, 0.8, 0.8)).times(Mat4.rotation(Math.PI/2,0,1,0)).times(Mat4.rotation(-Math.PI/2,1,0,0)), shadow_pass? this.Chain : this.pure);
+            
             this.shapes.table.draw(context, program_state, this.room3_parent.times( Mat4.translation(0, 0, 0)), shadow_pass? this.wood : this.pure);
             this.shapes.barrel1.draw(context, program_state,this.room3_parent.times( Mat4.translation(15, 1, 22)), shadow_pass? this.barrel : this.pure);
-            this.shapes.table.draw(context, program_state,this.room3_parent.times( Mat4.translation(7, 0, 17)), shadow_pass? this.wood : this.pure);
-            this.shapes.skull.draw(context, program_state,this.room3_parent.times( Mat4.translation(7, 1, 17)).times(Mat4.scale(0.2, 0.2, 0.2)).times(Mat4.rotation(1.9,0,1,0.1)), shadow_pass? this.skull : this.pure);
+            
+            this.shapes.table.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, 0, 22.5)), shadow_pass? this.wood : this.pure);
+            this.shapes.skull.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, 1, 22.5)).times(Mat4.scale(0.2, 0.2, 0.2)).times(Mat4.rotation(1.9,-1,1,0.1)), shadow_pass? this.skull : this.pure);
             //let t1 = program_state.animation_time;
-            if(skull_drop && monster_trigger){
-                this.shapes.monster.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, 2, 15)).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
-            }else{
-                // hide under the floor but still draw (for performance)
-                this.shapes.monster.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, -10, 15)).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
+            if(skull_drop && monster_number == 1){ // hide
+                this.shapes.monster.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, -10, 25)).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
+            }else if (monster_number == 0){ // show
+                // hide under the floor but still draw (for performance) //room0.create_wall_z(-9,37,1,1, this.Wall); 
+                this.shapes.monster.draw(context, program_state, Mat4.translation(-8.5, 2, 37).times(Mat4.scale(0.8, 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
 
+            }else if (monster_number == 2){ // scare?
+                this.shapes.monster.draw(context, program_state,Mat4.translation(-35 + 5*Math.sin(this.t/10), 2, 37).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,0,0)), shadow_pass? this.thing : this.pure);
+            }
+            else {
+                this.shapes.monster.draw(context, program_state,this.room3_parent.times( Mat4.translation(8, -10, 20)).times(Mat4.scale(0.8 + 0.1*Math.sin(this.t/10), 0.8, 0.8)).times(Mat4.rotation(Math.PI,0,1,0)), shadow_pass? this.thing : this.pure);
             }
 
-            if (!open_skull_door) {
-                let door_transform = Mat4.translation(5, 1.5, 10).times(Mat4.scale(0.25, 3, 1));
-                this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
-            }
+            // if (!open_skull_door) {
+            //     let door_transform = Mat4.translation(5, 1.5, 10).times(Mat4.scale(0.25, 3, 1));
+            //     this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
+            // }
 
-            if (!open_hall_door) {
-                let door_transform = this.room3_parent.times(Mat4.translation(8, 1, 14)).times(Mat4.scale(1.5, 5, 0.25));
-                this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
-            }
+            // if (!open_hall_door) {
+            //     let door_transform = this.room3_parent.times(Mat4.translation(8, 1, 14)).times(Mat4.scale(1.5, 5, 0.25));
+            //     this.shapes.cube.draw(context, program_state, door_transform, shadow_pass ? this.wood_door : this.pure);
+            // }
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall1), shadow_pass? this.floor : this.pure);
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall2), shadow_pass? this.floor : this.pure);
             // this.shapes.cube.draw(context, program_state, this.room3_parent.times(this.room3.wall3), shadow_pass? this.floor : this.pure);
@@ -906,6 +947,8 @@ export class Castle_of_shadows extends Simulation {
             this.shapes.cube.draw(context, program_state, switch_transform, shadow_pass ? this.wood_door : pure)
 
         }
+
+
     }
 
     display(context, program_state) {
@@ -933,7 +976,7 @@ export class Castle_of_shadows extends Simulation {
             this.children.push(context.scratchpad.controls = new Movement_Controls_2());
             //Define the global camera and projection matrices, which are stored in program_state.
             program_state.set_camera(Mat4.look_at(
-                vec3(0, 1.9, 10.1),
+                vec3(6, 1.9, 9),
                 vec3(0, 1.9, 0),
                 vec3(0, 1, 0)
             )); // Locate the camera here
@@ -1034,6 +1077,7 @@ export class Castle_of_shadows extends Simulation {
                 this.depth_tex.override({texture: this.lightDepthTexture})
             );            
         }
+
         Item_System.update_item_in_range(context, program_state, this.mouse_ray);
         Interaction_System.update_interact_in_range(program_state.camera_transform);
 

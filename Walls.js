@@ -56,27 +56,32 @@ walls.push(gr_gate);
 
 
 // Room 3
-const room3_parent = Mat4.translation(-25, 0, -5);
+const room3_parent = Mat4.translation(-13, 0, 15);
 const room3_collision = {
     "wall_left": Mat4.translation(-5, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 5)),
+    //"wall_right": Mat4.translation(+5, 2 - 0.1, 0).times(Mat4.scale(0.33, 5, 5)),
     "wall_right1": Mat4.translation(+5, 2 - 0.1, 7).times(Mat4.scale(0.33, 5, 5)),
     "wall_right2": Mat4.translation(+5, 2 - 0.1, -7).times(Mat4.scale(0.33, 5, 5)),
     "wall_back": Mat4.translation(0, 2 - 0.1, -5).times(Mat4.scale(5, 5, 0.33)),
     "wall_front": Mat4.translation(0, 2 - 0.1, +5).times(Mat4.scale(5, 5, 0.33)),
+    //"wall_front": Mat4.translation(-8, 2 - 0.1, +5).times(Mat4.scale(5, 5, 0.33)),
+    //"wall_front2": Mat4.translation(+8, 2 - 0.1, +5).times(Mat4.scale(5, 5, 0.33)),
+    //"ceiling": Mat4.translation(0, 5, 0).times(Mat4.scale(5, 0.33, 5)),
+    //"floor": Mat4.translation(0, -0.1, 0).times(Mat4.scale(5, 0.1, 5)),
     "table": Mat4.translation(0, 0, 0).times(Mat4.scale(0.5, 0.5, 0.5)),
     // hallway
 
-    "wall_back_hall": Mat4.translation(8, 2 - 0.1, -2).times(Mat4.scale(4, 5, 0.33)),
-    "wall_front_hall2": Mat4.translation(6, 2 - 0.1, 2).times(Mat4.scale(1, 5, 0.33)),
-    "wall_right_hall": Mat4.translation(6, 2 - 0.1, 11).times(Mat4.scale(0.33, 4, 9)),
-    "wall_right_hall2": Mat4.translation(10, 2 - 0.1, 5).times(Mat4.scale(0.33, 5, 10)),
+    // "wall_back_hall": Mat4.translation(8, 2 - 0.1, -2).times(Mat4.scale(4, 5, 0.33)),
+    // "wall_front_hall2": Mat4.translation(6, 2 - 0.1, 2).times(Mat4.scale(1, 5, 0.33)),
+    // "wall_right_hall": Mat4.translation(6, 2 - 0.1, 11).times(Mat4.scale(0.33, 4, 9)),
+    // "wall_right_hall2": Mat4.translation(10, 2 - 0.1, 5).times(Mat4.scale(0.33, 5, 10)),
 
-    // corner
-    "wall_back_corner": Mat4.translation(14, 2 - 0.1, 15).times(Mat4.scale(4, 4, 0.33)),
-    "wall_front_corner2": Mat4.translation(10, 2 - 0.1, 19).times(Mat4.scale(4, 4, 0.33)),
+    // // corner
+    // "wall_back_corner": Mat4.translation(14, 2 - 0.1, 15).times(Mat4.scale(4, 4, 0.33)),
+    // "wall_front_corner2": Mat4.translation(10, 2 - 0.1, 19).times(Mat4.scale(4, 4, 0.33)),
 
-    "wall_front1": Mat4.translation(14, 2 - 0.1, 23.5).times(Mat4.scale(0.33, 5, 5)),
-    "wall_front2": Mat4.translation(17, 2 - 0.1, 12).times(Mat4.scale(0.33, 3, 3)),
+    // "wall_front1": Mat4.translation(14, 2 - 0.1, 23.5).times(Mat4.scale(0.33, 5, 5)),
+    // "wall_front2": Mat4.translation(17, 2 - 0.1, 12).times(Mat4.scale(0.33, 3, 3)),
 }
 for (const [key, value] of Object.entries(room3_collision)) {
     walls.push(room3_parent.times(value));
@@ -89,20 +94,20 @@ export { walls};
 let triggers = [];
 
 
-let trigger_mon = Mat4.translation(8, 2, 0);
-let end_trigger_mon = Mat4.translation(8, 2, 12);
+// let trigger_mon = Mat4.translation(8, 2, 0);
+// let end_trigger_mon = Mat4.translation(8, 2, 12);
 
-triggers.push(room3_parent.times(trigger_mon));
-triggers.push(room3_parent.times(end_trigger_mon));
+// triggers.push(room3_parent.times(trigger_mon));
+// triggers.push(room3_parent.times(end_trigger_mon));
 
 export { triggers};
 
 let doors = [];
 
-let door1_transform = Mat4.translation(5, 1, 10).times(Mat4.scale(0.25, 2, 1));
-let door2_transform = room3_parent.times(Mat4.translation(8, 1, 14)).times(Mat4.scale(1.5, 5, 0.25));
-doors.push(door1_transform);
-doors.push(door2_transform);
+// let door1_transform = Mat4.translation(5, 1, 10).times(Mat4.scale(0.25, 2, 1));
+// let door2_transform = room3_parent.times(Mat4.translation(8, 1, 14)).times(Mat4.scale(1.5, 5, 0.25));
+// doors.push(door1_transform);
+// doors.push(door2_transform);
 
 export {doors};
 

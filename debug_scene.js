@@ -9,7 +9,7 @@ import { Shadow_Fog_Textured_Phong_Shader, Shadow_Scroll_Textured_Phong_Shader }
 import {Shape_From_File} from './examples/obj-file-demo.js'
 import {Color_Phong_Shader, Shadow_Textured_Phong_Shader,
     Depth_Texture_Shader_2D, Buffered_Texture, LIGHT_DEPTH_TEX_SIZE} from './examples/shadow-demo-shaders.js'
-import {monster_trigger} from './first-person-controller.js'
+//import {monster_trigger} from './first-person-controller.js'
 
 // Pull these names into this module's scope for convenience:
 const {Vector, vec3, unsafe3, vec4, vec, color, hex_color,Matrix, Mat4, Light, Shape, Material, Shader, Texture, Scene} = tiny;
@@ -373,6 +373,7 @@ export class DebugScene extends Simulation {
         }
         this.shapes.cube.draw(context, program_state, _debug_transform, shadow_pass? this.pic2 : this.pure);
         console.log("x: " + this._debug_xPos + "  z:  " + this._debug_zPos + "  length:  " + this._debug_length + "  height:  " + this._debug_height + "  mat:  " + this._debug_material + "  precision:  " + this._debug_precision);
+        console.log("room0.create_wall_z("+this._debug_xPos+","+ this._debug_zPos+"," +this._debug_length+","+ this._debug_height+", this.Wall); " );
 
     }
 
